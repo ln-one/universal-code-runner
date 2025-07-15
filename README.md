@@ -1,11 +1,9 @@
 
 # Universal Code Runner
 
-[中文文档 (README.zh.md)](./README.zh.md)
+[中文文档](./README.zh.md)
 
-[![Test Suite](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml)
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Test Suite](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **`Universal Code Runner` is a smart, zero-configuration command-line tool for compiling and running code in over 10 different languages, designed for speed and elegance.**
 
