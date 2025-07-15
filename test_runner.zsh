@@ -11,9 +11,9 @@ LANG_TEST_CODE=(
   c '
 #include <stdio.h>
 int main(int argc, char *argv[]) {
-  printf("Hello, C!\\n");
+  printf("Hello, C!\n");
   for (int i = 1; i < argc; i++) {
-    printf("Arg %d: %s\\n", i, argv[i]);
+    printf("Arg %d: %s\n", i, argv[i]);
   }
   return 0;
 }'
@@ -57,9 +57,9 @@ process.argv.slice(2).forEach((arg, i) => {
 });'
   php '
 <?php
-echo "Hello, PHP!\\n";
+echo "Hello, PHP!\n";
 foreach (array_slice($argv, 1) as $i => $arg) {
-  echo "Arg " . ($i + 1) . ": " . $arg . "\\n";
+  echo "Arg " . ($i + 1) . ": " . $arg . "\n";
 }'
   rb '
 puts "Hello, Ruby!"
@@ -125,7 +125,7 @@ echo -e "${MAGENTA}🚀 Running language-specific tests...${RESET}"
 local test_arg1="test_arg1"
 local test_arg2="hello world"
 
-for ext in ${(k)LANG_TYPE}; do
+for ext in ${(k)LANG_CONFIG}; do
     # Skip Go and TypeScript to avoid CI failures
     if [[ "$ext" == "go" || "$ext" == "ts" ]]; then
         continue
@@ -149,14 +149,40 @@ for ext in ${(k)LANG_TYPE}; do
       lua)    expected_output="Hello, Lua!" ;;
     esac
 
-    # Check if a dependency runner is installed. If not, skip the test.
-    local runner=${LANG_RUNNER[$ext]:-${LANG_COMPILER[$ext]}}
-    if [[ -n "$runner" ]]; then
-        if ! command -v "$runner" &> /dev/null; then
-            echo -e "${YELLOW}- [SKIP]   .${ext} (missing dependency: ${runner})${RESET}"
-            ((SKIPPED++))
-            continue
+    # Check for dependencies before running the test
+    local config_string=${LANG_CONFIG[$ext]}
+    local -a config_parts
+    config_parts=("${(@s/:/)config_string}")
+    local type=${config_parts[1]}
+    local compiler=${config_parts[2]}
+    local runner=${config_parts[5]}
+    local dependency_missing=false
+    local missing_dep=""
+
+    if [[ "$type" == "compile_jvm" ]]; then
+        if ! command -v "$compiler" &>/dev/null; then
+            dependency_missing=true
+            missing_dep="$compiler"
+        elif ! command -v "java" &>/dev/null; then
+            dependency_missing=true
+            missing_dep="java"
         fi
+    elif [[ "$type" == "compile" ]]; then
+        if ! command -v "$compiler" &>/dev/null; then
+            dependency_missing=true
+            missing_dep="$compiler"
+        fi
+    elif [[ "$type" == "direct" ]]; then
+        if ! command -v "$runner" &>/dev/null; then
+            dependency_missing=true
+            missing_dep="$runner"
+        fi
+    fi
+
+    if [[ "$dependency_missing" == "true" ]]; then
+        echo -e "${YELLOW}- [SKIP]   .${ext} (missing dependency: ${missing_dep})${RESET}"
+        ((SKIPPED++))
+        continue
     fi
 
     echo -ne "${BLUE}  [TEST]   .${ext} ... ${RESET}"
@@ -186,7 +212,7 @@ echo -e "\n${MAGENTA}🚀 Running cloud drive simulation test...${RESET}"
 local gdrive_dir="gdrive_simulation"
 mkdir -p "$gdrive_dir"
 
-echo 'int main() { printf("Older C file\\n"); return 0; }' > "${gdrive_dir}/older.c"
+echo 'int main() { printf("Older C file\n"); return 0; }' > "${gdrive_dir}/older.c"
 touch -d "2 seconds ago" "${gdrive_dir}/older.c"
 sleep 1 
 # This python script now also prints its arguments to match the assertion
@@ -225,4 +251,4 @@ fi
 if [[ $FAILED -gt 0 ]]; then
     exit 1
 fi
-exit 0 
+exit 0

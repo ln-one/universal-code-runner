@@ -7,7 +7,7 @@ source "${_THIS_SCRIPT_DIR}/_common.zsh"
 # Displays a detailed help message in English.
 function show_help_en() {
     local supported_langs_str
-    for ext in ${(k)LANG_TYPE}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
+    for ext in ${(k)LANG_CONFIG}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
     cat <<-EOF
 
 ${C_BOLD}🚀 Universal Code Runner - A smart compile-and-run utility.${C_RESET}
@@ -45,7 +45,7 @@ EOF
 # Displays a detailed help message in Chinese.
 function show_help_zh() {
     local supported_langs_str
-    for ext in ${(k)LANG_TYPE}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
+    for ext in ${(k)LANG_CONFIG}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
     cat <<-EOF
 
 ${C_BOLD}🚀 Universal Code Runner - 智能的编译与运行工具.${C_RESET}
@@ -201,7 +201,7 @@ if [[ -n "$1" && "$1" != -* ]]; then
     # Case 2: File name without extension provided
     elif [[ "$potential_file" != *.* ]]; then
         base_name="$potential_file"
-        for ext in ${(k)LANG_TYPE}; do
+        for ext in ${(k)LANG_CONFIG}; do
             if [[ -f "${base_name}.${ext}" ]]; then
                 matched_files+=("${base_name}.${ext}")
             fi
@@ -272,19 +272,18 @@ function detect_lang_from_shebang() {
         if [[ "$shebang_line" == "#!"* ]]; then
             # Use a case statement for clarity and efficiency
             case "$shebang_line" in
-                *python*) echo "py"; return 0 ;;
-                *node*)   echo "js"; return 0 ;;
-                *bash*)   echo "sh"; return 0 ;;
-                *zsh*)    echo "sh"; return 0 ;;
-                *sh*)     echo "sh"; return 0 ;;
-                *perl*)   echo "pl"; return 0 ;;
-                *ruby*)   echo "rb"; return 0 ;;
+                *python*) echo "py"; return ;;
+                *node*)   echo "js"; return ;;
+                *bash*)   echo "sh"; return ;;
+                *zsh*)    echo "sh"; return ;;
+                *sh*)     echo "sh"; return ;;
+                *perl*)   echo "pl"; return ;;
+                *ruby*)   echo "rb"; return ;;
             esac
         fi
     fi
     # Return empty if no match or file not readable
     echo ""
-    return 1
 }
 
 # --- File Discovery (if in search mode) ---
@@ -299,7 +298,7 @@ if [[ "$SEARCH_MODE" == "true" ]]; then
   local file
   
   local find_name_args=()
-  for ext in ${(k)LANG_TYPE}; do
+  for ext in ${(k)LANG_CONFIG}; do
     find_name_args+=(-o -iname "*.$ext")
   done
   if [[ ${#find_name_args[@]} -gt 0 ]]; then
@@ -324,7 +323,7 @@ if [[ "$SEARCH_MODE" == "true" ]]; then
   local found_file=$latest_file
   
   if [[ -z "$found_file" ]]; then
-    log_msg ERROR "no_supported_files" ".${(j:|:)${(k)LANG_TYPE}}"
+    log_msg ERROR "no_supported_files" ".${(j:|:)${(k)LANG_CONFIG}}"
     exit 1
   fi
   
@@ -348,7 +347,7 @@ fi
 log_msg STEP "preparing_to_execute" "${C_CYAN}$ABSOLUTE_FILE_PATH${C_RESET}"
 log_msg INFO "file_type_detected" "${C_WHITE}.$EXT${C_RESET}"
 
-if [[ -n "${LANG_TYPE[$EXT]}" ]]; then
+if [[ -n "${LANG_CONFIG[$EXT]}" ]]; then
   # If timeout is enabled and available, use it directly
   if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]] && command -v timeout &>/dev/null; then
     log_msg INFO "time_limit" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
@@ -370,6 +369,6 @@ if [[ -n "${LANG_TYPE[$EXT]}" ]]; then
   fi
 else
   log_msg ERROR "unsupported_file_type" "${C_WHITE}.$EXT${C_RESET}"
-  log_msg INFO "supported_types" "${C_WHITE}.${(j:|:)${(k)LANG_TYPE}}${C_RESET}"
+  log_msg INFO "supported_types" "${C_WHITE}.${(j:|:)${(k)LANG_CONFIG}}${C_RESET}"
   exit 1
 fi
