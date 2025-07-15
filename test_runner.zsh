@@ -157,19 +157,30 @@ for ext in ${(k)LANG_CONFIG}; do
     local compiler=${config_parts[2]}
     local runner=${config_parts[5]}
     local dependency_missing=false
-    local missing_deps=()
+    local missing_dep=""
 
-    if [[ "$type" == "compile" || "$type" == "compile_jvm" ]] && ! command -v "$compiler" &>/dev/null; then
-        dependency_missing=true
-        missing_deps+=("$compiler")
-    fi
-    if [[ -n "$runner" ]] && ! command -v "$runner" &>/dev/null; then
-        dependency_missing=true
-        missing_deps+=("$runner")
+    if [[ "$type" == "compile_jvm" ]]; then
+        if ! command -v "$compiler" &>/dev/null; then
+            dependency_missing=true
+            missing_dep="$compiler"
+        elif ! command -v "java" &>/dev/null; then
+            dependency_missing=true
+            missing_dep="java"
+        fi
+    elif [[ "$type" == "compile" ]]; then
+        if ! command -v "$compiler" &>/dev/null; then
+            dependency_missing=true
+            missing_dep="$compiler"
+        fi
+    elif [[ "$type" == "direct" ]]; then
+        if ! command -v "$runner" &>/dev/null; then
+            dependency_missing=true
+            missing_dep="$runner"
+        fi
     fi
 
     if [[ "$dependency_missing" == "true" ]]; then
-        echo -e "${YELLOW}- [SKIP]   .${ext} (missing dependency: ${missing_deps[1]})${RESET}"
+        echo -e "${YELLOW}- [SKIP]   .${ext} (missing dependency: ${missing_dep})${RESET}"
         ((SKIPPED++))
         continue
     fi
