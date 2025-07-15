@@ -36,26 +36,6 @@ run_with_timeout_if_enabled() {
     fi
 }
 
-# --- Special case for Go ---
-if [[ "$SRC_EXT" == "go" ]]; then
-  check_dependencies_new go
-  log_msg INFO "running_with" "${C_CYAN}go run${C_RESET}"
-  run_with_timeout_if_enabled go run "$SRC_FILE" "${PROG_ARGS[@]}"
-  exit $?
-fi
-
-# --- Special case for TypeScript ---
-if [[ "$SRC_EXT" == "ts" ]]; then
-  if ! command -v ts-node &>/dev/null; then
-    log_msg ERROR "missing_dependency" "${C_CYAN}ts-node${C_RESET}"
-    exit 1
-  fi
-  log_msg INFO "running_with" "${C_CYAN}ts-node${C_RESET}"
-  run_with_timeout_if_enabled ts-node "$SRC_FILE" "${PROG_ARGS[@]}"
-  exit $?
-fi
-
-
 
 # --- Direct Execution ---
 if [[ "$TYPE" == "direct" ]]; then
