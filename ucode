@@ -126,15 +126,11 @@ while [[ $# -gt 0 && "$1" == -* ]]; do
         shift 1 # Ignore invalid --lang argument, just shift past it.
       fi
       ;;
-    -v|--verbose)
-      RUNNER_VERBOSE=true; shift
-      ;;
-    --ascii)
-      RUNNER_ASCII_MODE=true; shift
-      ;;
+    -v|--verbose) RUNNER_VERBOSE=true; shift ;;
+    --ascii) RUNNER_ASCII_MODE=true; shift ;;
     --sandbox)
-      RUNNER_SANDBOX=true; shift
-      # Check if sandbox technology is available
+      RUNNER_SANDBOX=true
+      shift
       if [[ "$(detect_sandbox_tech)" == "" ]]; then
         log_msg WARN "no_sandbox_tech"
         log_msg INFO "install_sandbox"
@@ -144,39 +140,25 @@ while [[ $# -gt 0 && "$1" == -* ]]; do
       RUNNER_DEBUG=true
       RUNNER_VERBOSE=true
       shift
-      # Debug language settings
       if [[ "$RUNNER_DEBUG" == "true" ]]; then
         debug_lang
       fi
       ;;
     --timeout)
-      if [[ $# -lt 2 ]]; then
-        log_msg ERROR "missing_timeout_value"
-        exit 1
-      fi
-      if ! validate_numeric "$2" "Timeout" 0 3600; then
-        exit 1
-      fi
+      [[ $# -lt 2 ]] && { log_msg ERROR "missing_timeout_value"; exit 1; }
+      validate_numeric "$2" "Timeout" 0 3600 || exit 1
       RUNNER_TIMEOUT=$2
       shift 2
       ;;
     --memory)
-      if [[ $# -lt 2 ]]; then
-        log_msg ERROR "missing_memory_value"
-        exit 1
-      fi
-      if ! validate_numeric "$2" "Memory limit" 0 4096; then
-        exit 1
-      fi
+      [[ $# -lt 2 ]] && { log_msg ERROR "missing_memory_value"; exit 1; }
+      validate_numeric "$2" "Memory limit" 0 4096 || exit 1
       RUNNER_MEMORY_LIMIT=$2
       shift 2
       ;;
-    --no-cache)
-      RUNNER_DISABLE_CACHE=true
-      shift
-      ;;
+    --no-cache) RUNNER_DISABLE_CACHE=true; shift ;;
     --clean-cache)
-      clean_cache 0 true  # 使用0天作为过期时间，true表示强制清理
+      clean_cache 0 true
       log_msg SUCCESS "cache_cleaned"
       exit 0
       ;;

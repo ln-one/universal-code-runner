@@ -19,11 +19,7 @@ PROG_ARGS=("$@")
 SRC_FILENAME=$(basename "$SRC_FILE")
 
 # Remove support for Go and TypeScript by overriding their type to 'unsupported'
-if [[ "$SRC_EXT" == "go" || "$SRC_EXT" == "ts" ]]; then
-    TYPE="unsupported"
-else
-    TYPE=${LANG_TYPE[$SRC_EXT]}
-fi
+TYPE=${LANG_TYPE[$SRC_EXT]}
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
