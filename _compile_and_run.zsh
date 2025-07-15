@@ -9,7 +9,13 @@ PROG_ARGS=("$@")
 
 SRC_FILENAME=$(basename "$SRC_FILE")
 SRC_EXT="${SRC_FILENAME##*.}"
-TYPE=${LANG_TYPE[$SRC_EXT]}
+
+# Remove support for Go and TypeScript by overriding their type to 'unsupported'
+if [[ "$SRC_EXT" == "go" || "$SRC_EXT" == "ts" ]]; then
+    TYPE="unsupported"
+else
+    TYPE=${LANG_TYPE[$SRC_EXT]}
+fi
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
@@ -42,21 +48,23 @@ if [[ "$TYPE" == "direct" ]]; then
     RUNNER=${LANG_RUNNER[$SRC_EXT]}
     check_dependencies_new "$RUNNER"
     log_msg INFO "running_with" "${C_CYAN}${RUNNER}${C_RESET}"
-
-    # ts 文件用 ts-node 运行，避免 node 直接运行 .ts
-    if [[ "$SRC_EXT" == "ts" ]]; then
-        RUN_CMD=("$RUNNER" "$SRC_FILE" "${PROG_ARGS[@]}")
-    else
-        RUN_CMD=("$RUNNER" "$SRC_FILE" "${PROG_ARGS[@]}")
-    fi
-
+    
+    # Direct execution with timeout if enabled
     if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]] && command -v timeout &>/dev/null; then
         log_msg INFO "time_limit" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
+        
+        # Get program output header in the current language
         local program_output=$(get_msg "program_output")
+        
         echo -e "${MAGENTA_OLD}┌────────────────────── ${WHITE_OLD}${program_output}${MAGENTA_OLD} ──────────────────────┐${RESET_OLD}"
-        timeout --kill-after=2 "$RUNNER_TIMEOUT" "${RUN_CMD[@]}"
+        
+        # Run with timeout
+        timeout --kill-after=2 "$RUNNER_TIMEOUT" "$RUNNER" "$SRC_FILE" "${PROG_ARGS[@]}"
         local exit_code=$?
+        
         echo -e "${MAGENTA_OLD}└────────────────────────────────────────────────────────────┘${RESET_OLD}"
+        
+        # Check if timeout occurred
         if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
             log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
             local status_msg=$(get_msg "program_timed_out_full")
@@ -69,8 +77,10 @@ if [[ "$TYPE" == "direct" ]]; then
             echo -e "\n${BLUE_OLD}📊 ${YELLOW_OLD}${status_msg}${RESET_OLD}"
         fi
     else
-        execute_and_show_output "${RUN_CMD[@]}"
+        # Normal execution without timeout
+        execute_and_show_output "$RUNNER" "$SRC_FILE" "${PROG_ARGS[@]}"
     fi
+    
     exit $?
 fi
 
@@ -239,4 +249,4 @@ if [[ "$TYPE" == "compile" ]]; then
 fi
 
 log_msg ERROR "unknown_language" "$TYPE" "$SRC_EXT"
-exit 1 
+exit 1
