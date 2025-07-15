@@ -14,6 +14,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22' # 可根据需要指定 Go 版本
 
       - name: Install system dependencies
         run: |
@@ -31,6 +35,8 @@ jobs:
             perl \
             lua5.3
 
+      - name: Install Node.js dependencies
+        run: sudo npm install -g ts-node
 
       - name: Make scripts executable
         run: chmod +x ./*.zsh

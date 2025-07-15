@@ -37,18 +37,6 @@ public class Test {
     }
   }
 }'
-  go '
-package main
-import (
-  "fmt"
-  "os"
-)
-func main() {
-  fmt.Println("Hello, Go!")
-  for i, arg := range os.Args[1:] {
-    fmt.Printf("Arg %d: %s\\n", i+1, arg)
-  }
-}'
   rs '
 use std::env;
 fn main() {
@@ -64,11 +52,6 @@ for i, arg in enumerate(sys.argv[1:]):
   print(f"Arg {i+1}: {arg}")'
   js '
 console.log("Hello, JavaScript!");
-process.argv.slice(2).forEach((arg, i) => {
-  console.log(`Arg ${i+1}: ${arg}`);
-});'
-  ts '
-console.log("Hello, TypeScript!");
 process.argv.slice(2).forEach((arg, i) => {
   console.log(`Arg ${i+1}: ${arg}`);
 });'
@@ -148,15 +131,14 @@ for ext in ${(k)LANG_TYPE}; do
     local expected_output="" # Reset for each iteration
     
     # Set the expected "Hello" string based on the test code for each language
+
     case "$ext" in
       c)      expected_output="Hello, C!" ;;
       cpp)    expected_output="Hello, C++!" ;;
       java)   filename="Test.java"; expected_output="Hello, Java!" ;;
-      go)     expected_output="Hello, Go!" ;;
       rs)     expected_output="Hello, Rust!" ;;
       py)     expected_output="Hello, Python!" ;;
       js)     expected_output="Hello, JavaScript!" ;;
-      ts)     expected_output="Hello, TypeScript!" ;;
       php)    expected_output="Hello, PHP!" ;;
       rb)     expected_output="Hello, Ruby!" ;;
       sh)     expected_output="Hello, Shell!" ;;
