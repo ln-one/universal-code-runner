@@ -628,13 +628,21 @@ GRAY_OLD=$'\033[0;90m'
 WHITE_OLD=$'\033[1;97m'
 RESET_OLD=$'\033[0m'
 
-typeset -gA LANG_TYPE LANG_COMPILER LANG_RUNNER LANG_FLAGS_VAR LANG_DEFAULT_FLAGS
-
-LANG_TYPE=(c "compile" cpp "compile" java "compile_jvm" py "direct" rs "compile" js "direct" php "direct" rb "direct" sh "direct" pl "direct" lua "direct")
-LANG_COMPILER=(c "gcc" cpp "g++" java "javac" rs "rustc")
-LANG_RUNNER=(java "java" py "python3" js "node" php "php" rb "ruby" sh "bash" pl "perl" lua "lua")
-LANG_FLAGS_VAR=(c "CFLAGS" cpp "CXXFLAGS" rs "RUSTFLAGS")
-LANG_DEFAULT_FLAGS=(c "-std=c17 -Wall -Wextra -O2" cpp "-std=c++17 -Wall -Wextra -O2" rs "-C opt-level=2")
+typeset -gA LANG_CONFIG
+LANG_CONFIG=(
+  # ext   type         compiler   flags_var  default_flags                     runner
+  c       "compile:gcc:CFLAGS:-std=c17 -Wall -Wextra -O2:"
+  cpp     "compile:g++:CXXFLAGS:-std=c++17 -Wall -Wextra -O2:"
+  rs      "compile:rustc:RUSTFLAGS:-C opt-level=2:"
+  java    "compile_jvm:javac:::-"
+  py      "direct::::python3"
+  js      "direct::::node"
+  php     "direct::::php"
+  rb      "direct::::ruby"
+  sh      "direct::::bash"
+  pl      "direct::::perl"
+  lua     "direct::::lua"
+)
 
 check_dependencies() {
   for dep in "$@"; do

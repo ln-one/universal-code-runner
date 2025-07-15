@@ -15,41 +15,30 @@ else
 fi
 
 PROG_ARGS=("$@")
-
 SRC_FILENAME=$(basename "$SRC_FILE")
 
-# Remove support for Go and TypeScript by overriding their type to 'unsupported'
-TYPE=${LANG_TYPE[$SRC_EXT]}
+# --- Language Configuration Parsing ---
+local config_string=${LANG_CONFIG[$SRC_EXT]}
+if [[ -z "$config_string" ]]; then
+  log_msg ERROR "unknown_language" "N/A" "$SRC_EXT"
+  exit 1
+fi
+
+local -a config_parts
+config_parts=("${(@s/:/)config_string}")
+
+TYPE=${config_parts[1]}
+COMPILER=${config_parts[2]}
+FLAGS_VAR_NAME=${config_parts[3]}
+DEFAULT_FLAGS=${config_parts[4]}
+RUNNER=${config_parts[5]}
+
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
-
 cd "$TEMP_DIR" || exit 1
-
-# Helper function to run a command with timeout if enabled
-run_with_timeout_if_enabled() {
-    local cmd="$1"
-    shift
-    local args=("$@")
-    
-    # Check if timeout is enabled and available
-    if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]] && command -v timeout &>/dev/null; then
-        log_msg INFO "time_limit" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
-        timeout --kill-after=2 "$RUNNER_TIMEOUT" "$cmd" "${args[@]}"
-        local exit_code=$?
-        if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
-            log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
-        fi
-        return $exit_code
-    else
-        "$cmd" "${args[@]}"
-        return $?
-    fi
-}
-
 
 # --- Direct Execution ---
 if [[ "$TYPE" == "direct" ]]; then
-    RUNNER=${LANG_RUNNER[$SRC_EXT]}
     check_dependencies_new "$RUNNER"
     log_msg INFO "running_with" "${C_CYAN}${RUNNER}${C_RESET}"
     
@@ -72,13 +61,16 @@ if [[ "$TYPE" == "direct" ]]; then
         if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
             log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
             local status_msg=$(get_msg "program_timed_out_full")
-            echo -e "\n${BLUE_OLD}📊 ${RED_OLD}${status_msg}${RESET_OLD}"
+            echo -e "
+${BLUE_OLD}📊 ${RED_OLD}${status_msg}${RESET_OLD}"
         elif [[ $exit_code -eq 0 ]]; then
             local status_msg=$(get_msg "program_completed_full")
-            echo -e "\n${BLUE_OLD}📊 ${GREEN_OLD}${status_msg}${RESET_OLD}"
+            echo -e "
+${BLUE_OLD}📊 ${GREEN_OLD}${status_msg}${RESET_OLD}"
         else
             local status_msg=$(get_msg "program_exited_with_code_full" "$exit_code")
-            echo -e "\n${BLUE_OLD}📊 ${YELLOW_OLD}${status_msg}${RESET_OLD}"
+            echo -e "
+${BLUE_OLD}📊 ${YELLOW_OLD}${status_msg}${RESET_OLD}"
         fi
     else
         # Normal execution without timeout
@@ -92,16 +84,13 @@ OUT_NAME=$(basename "$SRC_FILENAME" ".$SRC_EXT")
 
 # --- JVM Compilation ---
 if [[ "$TYPE" == "compile_jvm" ]]; then
-    COMPILER=${LANG_COMPILER[$SRC_EXT]:-javac}
-    RUNNER=${LANG_RUNNER[$SRC_EXT]:-java}
-    check_dependencies_new "$COMPILER" "$RUNNER"
+    local jvm_runner="java" # Runner is hardcoded for JVM
+    check_dependencies_new "$COMPILER" "$jvm_runner"
     check_dependencies_new "zip" "unzip"  
     
     # For JVM languages, we need to handle caching differently
     # since the output is a .class file, not a binary
     local src_dir=$(dirname "$SRC_FILE")
-    local class_file="${src_dir}/${OUT_NAME}.class"
-    local cached_class=""
     
     # Check if we have a cached class file
     if [[ "$RUNNER_DISABLE_CACHE" != "true" ]]; then
@@ -126,9 +115,9 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
             
             # For Java, the runner must be executed from the directory containing the class files
             if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
-                (cd "$src_dir" && execute_and_show_output timeout "--kill-after=2" "$RUNNER_TIMEOUT" "$RUNNER" "$OUT_NAME" "${PROG_ARGS[@]}")
+                (cd "$src_dir" && execute_and_show_output timeout "--kill-after=2" "$RUNNER_TIMEOUT" "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}")
             else
-                (cd "$src_dir" && execute_and_show_output "$RUNNER" "$OUT_NAME" "${PROG_ARGS[@]}")
+                (cd "$src_dir" && execute_and_show_output "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}")
             fi
             exit $?
         else
@@ -179,9 +168,9 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
         log_msg INFO "executing"
         # For Java, the runner must be executed from the directory containing the class files.
         if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
-            (cd "$(dirname "$SRC_FILE")" && execute_and_show_output timeout "--kill-after=2" "$RUNNER_TIMEOUT" "$RUNNER" "$OUT_NAME" "${PROG_ARGS[@]}")
+            (cd "$(dirname "$SRC_FILE")" && execute_and_show_output timeout "--kill-after=2" "$RUNNER_TIMEOUT" "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}")
         else
-            (cd "$(dirname "$SRC_FILE")" && execute_and_show_output "$RUNNER" "$OUT_NAME" "${PROG_ARGS[@]}")
+            (cd "$(dirname "$SRC_FILE")" && execute_and_show_output "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}")
         fi
         exit $?
     else
@@ -194,11 +183,7 @@ fi
 
 # --- Standard Compilation ---
 if [[ "$TYPE" == "compile" ]]; then
-    COMPILER=${LANG_COMPILER[$SRC_EXT]}
     check_dependencies_new "$COMPILER"
-    
-    FLAGS_VAR_NAME=${LANG_FLAGS_VAR[$SRC_EXT]}
-    DEFAULT_FLAGS=${LANG_DEFAULT_FLAGS[$SRC_EXT]}
     
     # Use indirect parameter expansion to get the value of CFLAGS, CXXFLAGS, etc.
     FLAGS_VALUE=${(P)FLAGS_VAR_NAME:-$DEFAULT_FLAGS}
@@ -252,5 +237,6 @@ if [[ "$TYPE" == "compile" ]]; then
     fi
 fi
 
-log_msg ERROR "unknown_language" "$TYPE" "$SRC_EXT"
+# This should not be reached due to the check at the top, but serves as a final fallback.
+log_msg ERROR "unsupported_file_type" "$SRC_EXT"
 exit 1
