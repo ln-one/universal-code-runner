@@ -91,7 +91,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
     COMPILER=${LANG_COMPILER[$SRC_EXT]:-javac}
     RUNNER=${LANG_RUNNER[$SRC_EXT]:-java}
     check_dependencies_new "$COMPILER" "$RUNNER"
-    check_dependencies_new "zip" "unzip"  # 确保有zip和unzip命令
+    check_dependencies_new "zip" "unzip"  
     
     # For JVM languages, we need to handle caching differently
     # since the output is a .class file, not a binary
@@ -106,7 +106,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
         # Generate hash for the source file
         local cache_dir=$(get_cache_dir)
         local src_hash=$(get_source_hash "$SRC_FILE" "$COMPILER")
-        local cached_zip="${cache_dir}/${src_hash}.zip"  # 添加.zip扩展名
+        local cached_zip="${cache_dir}/${src_hash}.zip"  
         
         # Check if cached zip exists
         if [[ -f "$cached_zip" ]]; then
@@ -114,7 +114,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
             
             # Extract the cached class files directly to the source directory
             log_msg DEBUG "extracting_cache" "${C_CYAN}${src_dir}${C_RESET}"
-            # 使用-j选项来忽略目录结构，直接解压到目标目录
+            
             unzip -q -o -j "$cached_zip" "*.class" -d "$src_dir"
             
             log_msg SUCCESS "using_cached_compilation"
@@ -150,13 +150,13 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
             # Check if there are any class files to cache
             if ls "$src_dir"/*.class &>/dev/null; then
                 log_msg DEBUG "found_files_to_cache" "${C_CYAN}${src_dir}${C_RESET}"
-                # 保存当前目录
+                
                 local current_dir=$(pwd)
-                # 切换到源代码目录
+                
                 cd "$src_dir" || exit 1
-                # 使用相对路径创建zip文件，只包含类文件名而不包含完整路径
+                
                 zip -q "${cached_zip}" *.class
-                # 返回原始目录
+                
                 cd "$current_dir" || exit 1
                 
                 # Check if zip was created successfully

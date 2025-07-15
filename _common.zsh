@@ -630,11 +630,11 @@ RESET_OLD=$'\033[0m'
 
 typeset -gA LANG_TYPE LANG_COMPILER LANG_RUNNER LANG_FLAGS_VAR LANG_DEFAULT_FLAGS
 
-LANG_TYPE=(c "compile" cpp "compile" java "compile_jvm" py "direct" go "compile" rs "compile" js "direct" ts "direct" php "direct" rb "direct" sh "direct" pl "direct" lua "direct")
-LANG_COMPILER=(c "gcc" cpp "g++" java "javac" go "go" rs "rustc")
-LANG_RUNNER=(java "java" py "python3" js "node" ts "ts-node" php "php" rb "ruby" sh "bash" pl "perl" lua "lua")
-LANG_FLAGS_VAR=(c "CFLAGS" cpp "CXXFLAGS" go "GOFLAGS" rs "RUSTFLAGS")
-LANG_DEFAULT_FLAGS=(c "-std=c17 -Wall -Wextra -O2" cpp "-std=c++17 -Wall -Wextra -O2" go "" rs "-C opt-level=2")
+LANG_TYPE=(c "compile" cpp "compile" java "compile_jvm" py "direct" rs "compile" js "direct" php "direct" rb "direct" sh "direct" pl "direct" lua "direct")
+LANG_COMPILER=(c "gcc" cpp "g++" java "javac" rs "rustc")
+LANG_RUNNER=(java "java" py "python3" js "node" php "php" rb "ruby" sh "bash" pl "perl" lua "lua")
+LANG_FLAGS_VAR=(c "CFLAGS" cpp "CXXFLAGS" rs "RUSTFLAGS")
+LANG_DEFAULT_FLAGS=(c "-std=c17 -Wall -Wextra -O2" cpp "-std=c++17 -Wall -Wextra -O2" rs "-C opt-level=2")
 
 check_dependencies() {
   for dep in "$@"; do
