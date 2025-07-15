@@ -8,6 +8,23 @@ source "${_MAIN_SCRIPT_DIR}/_common.zsh"
 # Create an associative array to hold the "Hello, World" source code for each language.
 typeset -A LANG_TEST_CODE
 LANG_TEST_CODE=(
+  go '
+package main
+import (
+  "fmt"
+  "os"
+)
+func main() {
+  fmt.Println("Hello, Go!")
+  for i, arg := range os.Args[1:] {
+    fmt.Printf("Arg %d: %s\\n", i+1, arg)
+  }
+}'
+  ts '
+console.log("Hello, TypeScript!");
+process.argv.slice(2).forEach((arg, i) => {
+  console.log(`Arg ${i+1}: ${arg}`);
+});'
   c '
 #include <stdio.h>
 int main(int argc, char *argv[]) {
