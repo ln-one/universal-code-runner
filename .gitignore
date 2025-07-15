@@ -1,0 +1,8 @@
+# Test runner artifacts
+test_workspace/
+
+# macOS specific
+.DS_Store
+
+# VSCode specific
+.vscode/ 

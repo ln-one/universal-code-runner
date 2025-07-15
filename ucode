@@ -1,0 +1,317 @@
+#!/usr/bin/env zsh
+
+# Get the directory where the script is located to source the common helpers.
+_THIS_SCRIPT_DIR=${0:A:h}
+source "${_THIS_SCRIPT_DIR}/_common.zsh"
+
+# Displays a detailed help message in English.
+function show_help_en() {
+    local supported_langs_str
+    for ext in ${(k)LANG_TYPE}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
+    cat <<-EOF
+
+${C_BOLD}🚀 Universal Code Runner - A smart compile-and-run utility.${C_RESET}
+
+This script automatically handles compiling and running code files,
+letting you focus on writing code instead of build commands.
+
+${C_BOLD}${C_BLUE}▋USAGE${C_RESET}
+    ${C_BOLD}ucode${C_RESET} [${C_YELLOW}options${C_RESET}] [${C_GREEN}file_to_run${C_RESET}] [${C_CYAN}program_args...${C_RESET}]
+
+${C_BOLD}${C_BLUE}▋MODES OF OPERATION${C_RESET}
+    1. ${C_BOLD}Automatic Mode${C_RESET} (No file provided)
+       Finds the most recently modified source file and executes it.
+    2. ${C_BOLD}File Mode${C_RESET} (File path provided)
+       Directly compiles and runs the specified file.
+
+${C_BOLD}${C_BLUE}▋OPTIONS${C_RESET}
+    ${C_YELLOW}-v, --verbose${C_RESET}   Enable verbose mode for detailed step-by-step output.
+    ${C_YELLOW}--sandbox${C_RESET}      Run code in a restricted sandbox environment for security.
+                      Limits network access, file system operations, and system resources.
+    ${C_YELLOW}--timeout <sec>${C_RESET} Set maximum execution time in seconds (0 = no limit).
+    ${C_YELLOW}--memory <MB>${C_RESET}  Set maximum memory usage in megabytes (0 = no limit).
+    ${C_YELLOW}--ascii${C_RESET}        Use ASCII characters for icons for compatibility.
+    ${C_YELLOW}--lang [en|zh]${C_RESET} Force the language to English or Chinese for all messages and output.
+    ${C_YELLOW}--no-cache${C_RESET}     Disable compilation result caching.
+    ${C_YELLOW}--clean-cache${C_RESET}  Clean the compilation cache.
+    ${C_YELLOW}-h, --help${C_RESET}      Show this help message and exit.
+
+${C_BOLD}${C_BLUE}▋SUPPORTED LANGUAGES${C_RESET}
+    ${supported_langs_str}
+EOF
+}
+
+# Displays a detailed help message in Chinese.
+function show_help_zh() {
+    local supported_langs_str
+    for ext in ${(k)LANG_TYPE}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
+    cat <<-EOF
+
+${C_BOLD}🚀 Universal Code Runner - 智能的编译与运行工具.${C_RESET}
+
+本脚本可自动处理代码的编译和运行，
+让您专注于代码本身，而非繁琐的构建命令。
+
+${C_BOLD}${C_BLUE}▋ 用法${C_RESET}
+    ${C_BOLD}ucode${C_RESET} [${C_YELLOW}选项${C_RESET}] [${C_GREEN}要运行的文件${C_RESET}] [${C_CYAN}程序参数...${C_RESET}]
+
+${C_BOLD}${C_BLUE}▋ 运行模式${C_RESET}
+    1. ${C_BOLD}自动模式${C_RESET} (不提供文件名)
+       自动寻找当前目录下最新修改的源文件并执行。
+    2. ${C_BOLD}文件模式${C_RESET} (提供文件路径)
+       直接编译并运行您指定的文件。
+
+${C_BOLD}${C_BLUE}▋ 选项${C_RESET}
+    ${C_YELLOW}-v, --verbose${C_RESET}   启用详细模式，显示详细的编译和执行步骤。
+    ${C_YELLOW}--sandbox${C_RESET}      在受限安全环境中运行代码，提供沙箱隔离。
+                      限制网络访问、文件系统操作和系统资源使用。
+    ${C_YELLOW}--timeout <秒>${C_RESET} 设置最大执行时间，单位为秒（0 = 无限制）。
+    ${C_YELLOW}--memory <MB>${C_RESET}  设置最大内存使用量，单位为MB（0 = 无限制）。
+    ${C_YELLOW}--ascii${C_RESET}        使用 ASCII 字符作为图标，以兼容旧版终端。
+    ${C_YELLOW}--lang [en|zh]${C_RESET} 强制使用英文或中文显示所有消息和输出。
+    ${C_YELLOW}--no-cache${C_RESET}     禁用编译结果缓存。
+    ${C_YELLOW}--clean-cache${C_RESET}  清理编译结果缓存。
+    ${C_YELLOW}-h, --help${C_RESET}      显示此帮助信息并退出。
+
+${C_BOLD}${C_BLUE}▋ 支持的语言${C_RESET}
+    ${supported_langs_str}
+EOF
+}
+
+# Determines which help message to show based on environment or flags.
+function show_help() {
+    local force_lang="$1"
+    local effective_lang="en" # Default to English
+
+    if [[ -n "$force_lang" ]]; then
+        effective_lang="$force_lang"
+    elif [[ "$LANG" == "zh_CN"* ]]; then
+        effective_lang="zh"
+    fi
+
+    if [[ "$effective_lang" == "zh" ]]; then
+        show_help_zh
+    else
+        show_help_en
+    fi
+}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#  🚀 Entry Point & Logic
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# --- Argument Parsing ---
+export RUNNER_VERBOSE=false
+export RUNNER_ASCII_MODE=false
+export RUNNER_SANDBOX=false
+export RUNNER_DEBUG=false
+export RUNNER_TIMEOUT=0
+export RUNNER_MEMORY_LIMIT=0
+export RUNNER_DISABLE_CACHE=false
+export RUNNER_LANGUAGE="auto"  # Default to auto-detect
+HELP_LANG_FORCED=""
+
+# Parse flags that affect the script's own behavior first.
+while [[ $# -gt 0 && "$1" == -* ]]; do
+  case "$1" in
+    --lang)
+      if [[ "$2" == "en" || "$2" == "zh" ]]; then
+        HELP_LANG_FORCED=$2
+        RUNNER_LANGUAGE=$2
+        shift 2
+      else
+        shift 1 # Ignore invalid --lang argument, just shift past it.
+      fi
+      ;;
+    -v|--verbose)
+      RUNNER_VERBOSE=true; shift
+      ;;
+    --ascii)
+      RUNNER_ASCII_MODE=true; shift
+      ;;
+    --sandbox)
+      RUNNER_SANDBOX=true; shift
+      # Check if sandbox technology is available
+      if [[ "$(detect_sandbox_tech)" == "" ]]; then
+        log_msg WARN "no_sandbox_tech"
+        log_msg INFO "install_sandbox"
+      fi
+      ;;
+    --debug)
+      RUNNER_DEBUG=true
+      RUNNER_VERBOSE=true
+      shift
+      # Debug language settings
+      if [[ "$RUNNER_DEBUG" == "true" ]]; then
+        debug_lang
+      fi
+      ;;
+    --timeout)
+      if [[ $# -lt 2 ]]; then
+        log_msg ERROR "missing_timeout_value"
+        exit 1
+      fi
+      if ! validate_numeric "$2" "Timeout" 0 3600; then
+        exit 1
+      fi
+      RUNNER_TIMEOUT=$2
+      shift 2
+      ;;
+    --memory)
+      if [[ $# -lt 2 ]]; then
+        log_msg ERROR "missing_memory_value"
+        exit 1
+      fi
+      if ! validate_numeric "$2" "Memory limit" 0 4096; then
+        exit 1
+      fi
+      RUNNER_MEMORY_LIMIT=$2
+      shift 2
+      ;;
+    --no-cache)
+      RUNNER_DISABLE_CACHE=true
+      shift
+      ;;
+    --clean-cache)
+      clean_cache 0 true  # 使用0天作为过期时间，true表示强制清理
+      log_msg SUCCESS "cache_cleaned"
+      exit 0
+      ;;
+    -h|--help)
+      show_help "$HELP_LANG_FORCED"
+      exit 0
+      ;;
+    *)
+      # Unknown option, assume it's not a flag
+      break
+      ;;
+  esac
+done
+
+FILE=""
+PROG_ARGS=()
+SEARCH_MODE=false
+
+# 1. If the first argument IS a file, use it.
+if [[ -f "$1" ]]; then
+  FILE="$1"
+  shift
+  # Validate and sanitize program arguments
+  if [[ $# -gt 0 ]]; then
+    # Validate arguments for potential injection attacks
+    log_msg DEBUG "validating_args"
+    # Check for potentially dangerous characters in arguments
+    for arg in "$@"; do
+      if echo "$arg" | grep -q '[;&|<>$()\\`]'; then
+        log_msg WARN "unsafe_arg" "${C_YELLOW}${arg}${C_RESET}"
+        log_msg INFO "args_quoted"
+      fi
+    done
+    PROG_ARGS=("$@")
+  fi
+  log_msg INFO "using_file" "${C_CYAN}${FILE}${C_RESET}"
+# 2. If the first argument LOOKS like a file but does not exist, it's an error.
+elif [[ -n "$1" && "$1" != -* && "$1" == *.* ]]; then
+  log_msg ERROR "file_not_exist" "${C_CYAN}$1${C_RESET}"
+  exit 1
+# 3. Otherwise, enter auto-search mode and treat all args as program args.
+else
+  SEARCH_MODE=true
+  # Validate and sanitize program arguments
+  if [[ $# -gt 0 ]]; then
+    # Validate arguments for potential injection attacks
+    log_msg DEBUG "validating_args"
+    # Check for potentially dangerous characters in arguments
+    for arg in "$@"; do
+      if echo "$arg" | grep -q '[;&|<>$()\\`]'; then
+        log_msg WARN "unsafe_arg" "${C_YELLOW}${arg}${C_RESET}"
+        log_msg INFO "args_quoted"
+      fi
+    done
+    PROG_ARGS=("$@")
+  fi
+fi
+
+
+# --- File Discovery (if in search mode) ---
+if [[ "$SEARCH_MODE" == "true" ]]; then
+  log_msg STEP "searching_file"
+  
+  # The Zsh glob qualifier 'om' (order by modification time) is unreliable on
+  # some network filesystems like Google Drive. We will use a more robust
+  # 'find' command combined with a loop to identify the latest file.
+  local latest_file=""
+  local latest_mod_time=0
+  local file
+  
+  local find_name_args=()
+  for ext in ${(k)LANG_TYPE}; do
+    find_name_args+=(-o -iname "*.$ext")
+  done
+  if [[ ${#find_name_args[@]} -gt 0 ]]; then
+    find_name_args_final=("${find_name_args[@]:1}")
+  else
+    find_name_args_final=()
+  fi
+
+  # The while loop is wrapped in braces with stdout redirected to /dev/null
+  # to suppress any extraneous output from the user's shell environment (e.g. `mod_time=...`)
+  {
+    while IFS= read -r file; do
+      local mod_time
+      mod_time=$(stat -c %Y "$file" 2>/dev/null)
+      if [[ -n "$mod_time" && "$mod_time" -gt "$latest_mod_time" ]]; then
+        latest_mod_time=$mod_time
+        latest_file=$file
+      fi
+    done < <(find . -type f \( "${find_name_args_final[@]}" \) 2>/dev/null)
+  } >/dev/null
+
+  local found_file=$latest_file
+  
+  if [[ -z "$found_file" ]]; then
+    log_msg ERROR "no_supported_files" ".${(j:|:)${(k)LANG_TYPE}}"
+    exit 1
+  fi
+  
+  FILE=$found_file
+  log_msg SUCCESS "auto_selected_file" "${C_CYAN}$FILE${C_RESET}"
+fi
+
+if [[ ! -f "$FILE" ]]; then
+  log_msg ERROR "file_not_found" "${C_CYAN}$FILE${C_RESET}"
+  exit 1
+fi
+
+ABSOLUTE_FILE_PATH=$(realpath "$FILE")
+EXT="${ABSOLUTE_FILE_PATH##*.}"
+
+log_msg STEP "preparing_to_execute" "${C_CYAN}$ABSOLUTE_FILE_PATH${C_RESET}"
+log_msg INFO "file_type_detected" "${C_WHITE}.$EXT${C_RESET}"
+
+if [[ -n "${LANG_TYPE[$EXT]}" ]]; then
+  # If timeout is enabled and available, use it directly
+  if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]] && command -v timeout &>/dev/null; then
+    log_msg INFO "time_limit" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
+    
+    # Use timeout command to limit execution time
+    timeout --kill-after=2 "$RUNNER_TIMEOUT" "${_THIS_SCRIPT_DIR}/_compile_and_run.zsh" "$ABSOLUTE_FILE_PATH" "${PROG_ARGS[@]}"
+    exit_code=$?
+    
+    # Check if timeout occurred
+    if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
+      log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
+      exit $exit_code
+    fi
+    
+    exit $exit_code
+  else
+    # Normal execution without timeout
+    "${_THIS_SCRIPT_DIR}/_compile_and_run.zsh" "$ABSOLUTE_FILE_PATH" "${PROG_ARGS[@]}"
+  fi
+else
+  log_msg ERROR "unsupported_file_type" "${C_WHITE}.$EXT${C_RESET}"
+  log_msg INFO "supported_types" "${C_WHITE}.${(j:|:)${(k)LANG_TYPE}}${C_RESET}"
+  exit 1
+fi
