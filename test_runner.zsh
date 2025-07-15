@@ -214,6 +214,7 @@ fi
 
 # --- Final Summary ---
 cd "${_MAIN_SCRIPT_DIR}" &>/dev/null
+
 echo -e "\n${BOLD}${WHITE}📊 Test Summary:${RESET}"
 echo -e "  ${GREEN}Passed: $PASSED${RESET}"
 echo -e "  ${RED}Failed: $FAILED${RESET}"

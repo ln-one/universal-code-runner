@@ -23,6 +23,7 @@ ${C_BOLD}${C_BLUE}▋MODES OF OPERATION${C_RESET}
        Finds the most recently modified source file and executes it.
     2. ${C_BOLD}File Mode${C_RESET} (File path provided)
        Directly compiles and runs the specified file.
+       You can omit the file extension; e.g., `ucode hello` will find `hello.cpp`.
 
 ${C_BOLD}${C_BLUE}▋OPTIONS${C_RESET}
     ${C_YELLOW}-v, --verbose${C_RESET}   Enable verbose mode for detailed step-by-step output.
@@ -31,7 +32,7 @@ ${C_BOLD}${C_BLUE}▋OPTIONS${C_RESET}
     ${C_YELLOW}--timeout <sec>${C_RESET} Set maximum execution time in seconds (0 = no limit).
     ${C_YELLOW}--memory <MB>${C_RESET}  Set maximum memory usage in megabytes (0 = no limit).
     ${C_YELLOW}--ascii${C_RESET}        Use ASCII characters for icons for compatibility.
-    ${C_YELLOW}--lang [en|zh]${C_RESET} Force the language to English or Chinese for all messages and output.
+    ${C_YELLOW}-l, --lang [en|zh]${C_RESET} Force the language to English or Chinese for all messages and output.
     ${C_YELLOW}--no-cache${C_RESET}     Disable compilation result caching.
     ${C_YELLOW}--clean-cache${C_RESET}  Clean the compilation cache.
     ${C_YELLOW}-h, --help${C_RESET}      Show this help message and exit.
@@ -60,6 +61,7 @@ ${C_BOLD}${C_BLUE}▋ 运行模式${C_RESET}
        自动寻找当前目录下最新修改的源文件并执行。
     2. ${C_BOLD}文件模式${C_RESET} (提供文件路径)
        直接编译并运行您指定的文件。
+       您可以省略文件扩展名，例如 `ucode hello` 会自动查找 `hello.cpp`。
 
 ${C_BOLD}${C_BLUE}▋ 选项${C_RESET}
     ${C_YELLOW}-v, --verbose${C_RESET}   启用详细模式，显示详细的编译和执行步骤。
@@ -68,7 +70,7 @@ ${C_BOLD}${C_BLUE}▋ 选项${C_RESET}
     ${C_YELLOW}--timeout <秒>${C_RESET} 设置最大执行时间，单位为秒（0 = 无限制）。
     ${C_YELLOW}--memory <MB>${C_RESET}  设置最大内存使用量，单位为MB（0 = 无限制）。
     ${C_YELLOW}--ascii${C_RESET}        使用 ASCII 字符作为图标，以兼容旧版终端。
-    ${C_YELLOW}--lang [en|zh]${C_RESET} 强制使用英文或中文显示所有消息和输出。
+    ${C_YELLOW}-l, --lang [en|zh]${C_RESET} 强制使用英文或中文显示所有消息和输出。
     ${C_YELLOW}--no-cache${C_RESET}     禁用编译结果缓存。
     ${C_YELLOW}--clean-cache${C_RESET}  清理编译结果缓存。
     ${C_YELLOW}-h, --help${C_RESET}      显示此帮助信息并退出。
@@ -115,7 +117,7 @@ HELP_LANG_FORCED=""
 # Parse flags that affect the script's own behavior first.
 while [[ $# -gt 0 && "$1" == -* ]]; do
   case "$1" in
-    --lang)
+    -l|--lang)
       if [[ "$2" == "en" || "$2" == "zh" ]]; then
         HELP_LANG_FORCED=$2
         RUNNER_LANGUAGE=$2
@@ -193,46 +195,115 @@ FILE=""
 PROG_ARGS=()
 SEARCH_MODE=false
 
-# 1. If the first argument IS a file, use it.
-if [[ -f "$1" ]]; then
-  FILE="$1"
-  shift
-  # Validate and sanitize program arguments
-  if [[ $# -gt 0 ]]; then
-    # Validate arguments for potential injection attacks
-    log_msg DEBUG "validating_args"
-    # Check for potentially dangerous characters in arguments
-    for arg in "$@"; do
-      if echo "$arg" | grep -q '[;&|<>$()\\`]'; then
-        log_msg WARN "unsafe_arg" "${C_YELLOW}${arg}${C_RESET}"
-        log_msg INFO "args_quoted"
-      fi
-    done
-    PROG_ARGS=("$@")
-  fi
-  log_msg INFO "using_file" "${C_CYAN}${FILE}${C_RESET}"
-# 2. If the first argument LOOKS like a file but does not exist, it's an error.
-elif [[ -n "$1" && "$1" != -* && "$1" == *.* ]]; then
-  log_msg ERROR "file_not_exist" "${C_CYAN}$1${C_RESET}"
-  exit 1
-# 3. Otherwise, enter auto-search mode and treat all args as program args.
+# --- File Argument Handling ---
+# This logic determines whether to run in File Mode or Auto-Search Mode.
+#
+# 1. If the first argument points to a valid, unambiguous file (with or without an extension),
+#    we enter File Mode. That argument is the file to run, and the rest are program arguments.
+# 2. If the first argument does NOT point to a file, we enter Auto-Search Mode.
+#    All arguments are treated as program arguments for the auto-detected file.
+# 3. If the first argument looks like a file but doesn't exist (e.g., `ucode missing.js`),
+#    it's an error.
+
+# Check if the first argument is a potential file name (i.e., not an option and not empty)
+if [[ -n "$1" && "$1" != -* ]]; then
+    local potential_file="$1"
+    local found_file=""
+    local is_ambiguous=false
+    local base_name=""
+    local matched_files=()
+
+    # Case 1: Direct file match
+    if [[ -f "$potential_file" ]]; then
+        found_file="$potential_file"
+    # Case 2: File name without extension provided
+    elif [[ "$potential_file" != *.* ]]; then
+        base_name="$potential_file"
+        for ext in ${(k)LANG_TYPE}; do
+            if [[ -f "${base_name}.${ext}" ]]; then
+                matched_files+=("${base_name}.${ext}")
+            fi
+        done
+
+        if [[ ${#matched_files[@]} -eq 1 ]]; then
+            found_file="${matched_files[1]}"
+        elif [[ ${#matched_files[@]} -gt 1 ]]; then
+            is_ambiguous=true
+        fi
+    fi
+
+    # --- Mode Decision ---
+    if [[ -n "$found_file" ]]; then
+        # A unique file was found -> File Mode
+        FILE="$found_file"
+        shift # Consume the file argument from the list
+        PROG_ARGS=("$@")
+        log_msg INFO "using_file" "${C_CYAN}${FILE}${C_RESET}"
+    elif [[ "$is_ambiguous" == "true" ]]; then
+        # Ambiguous file specifier -> Error
+        local found_files_str
+        found_files_str=$(IFS=, ; echo "${matched_files[*]}")
+        log_msg ERROR "ambiguous_file_specifier" ""$base_name"" ""$found_files_str""
+        exit 1
+    else
+        # No file found matching the first argument.
+        # Check if it looked like a file (e.g., had an extension) to give a better error.
+        if [[ "$potential_file" == *.* && ! -f "$potential_file" ]]; then
+            log_msg ERROR "file_not_exist" "${C_CYAN}${potential_file}${C_RESET}"
+            exit 1
+        fi
+        # Otherwise, assume Auto-Search Mode. The first argument was not a file.
+        SEARCH_MODE=true
+        PROG_ARGS=("$@") # All original arguments are program args
+    fi
 else
-  SEARCH_MODE=true
-  # Validate and sanitize program arguments
-  if [[ $# -gt 0 ]]; then
-    # Validate arguments for potential injection attacks
-    log_msg DEBUG "validating_args"
-    # Check for potentially dangerous characters in arguments
-    for arg in "$@"; do
-      if echo "$arg" | grep -q '[;&|<>$()\\`]'; then
-        log_msg WARN "unsafe_arg" "${C_YELLOW}${arg}${C_RESET}"
-        log_msg INFO "args_quoted"
-      fi
-    done
-    PROG_ARGS=("$@")
-  fi
+    # No file argument provided, or it's an option -> Auto-Search Mode
+    SEARCH_MODE=true
+    PROG_ARGS=("$@") # All original arguments are program args
 fi
 
+
+# Validate and sanitize program arguments
+if [[ ${#PROG_ARGS[@]} -gt 0 ]]; then
+  # Validate arguments for potential injection attacks
+  log_msg DEBUG "validating_args"
+  # Check for potentially dangerous characters in arguments
+  for arg in "${PROG_ARGS[@]}"; do
+    if echo "$arg" | grep -q '[;&|<>$()\\`]'; then
+      log_msg WARN "unsafe_arg" "${C_YELLOW}${arg}${C_RESET}"
+      log_msg INFO "args_quoted"
+    fi
+  done
+fi
+
+# --- Shebang Detection ---
+# Tries to determine the language from the shebang line (e.g., #!/usr/bin/env python)
+# @param: $1 - The absolute path to the file to check.
+# @return: The language extension (e.g., "py", "sh") if found, otherwise empty string.
+function detect_lang_from_shebang() {
+    local file_path="$1"
+    local shebang_line
+    # Ensure the file exists and is readable before trying to read from it.
+    if [[ -r "$file_path" ]]; then
+        shebang_line=$(head -n 1 "$file_path")
+        # Check if the line starts with #!
+        if [[ "$shebang_line" == "#!"* ]]; then
+            # Use a case statement for clarity and efficiency
+            case "$shebang_line" in
+                *python*) echo "py"; return 0 ;;
+                *node*)   echo "js"; return 0 ;;
+                *bash*)   echo "sh"; return 0 ;;
+                *zsh*)    echo "sh"; return 0 ;;
+                *sh*)     echo "sh"; return 0 ;;
+                *perl*)   echo "pl"; return 0 ;;
+                *ruby*)   echo "rb"; return 0 ;;
+            esac
+        fi
+    fi
+    # Return empty if no match or file not readable
+    echo ""
+    return 1
+}
 
 # --- File Discovery (if in search mode) ---
 if [[ "$SEARCH_MODE" == "true" ]]; then
@@ -285,7 +356,12 @@ if [[ ! -f "$FILE" ]]; then
 fi
 
 ABSOLUTE_FILE_PATH=$(realpath "$FILE")
-EXT="${ABSOLUTE_FILE_PATH##*.}"
+# First, try to detect language from shebang
+EXT=$(detect_lang_from_shebang "$ABSOLUTE_FILE_PATH")
+# If shebang detection fails, fall back to file extension
+if [[ -z "$EXT" ]]; then
+    EXT="${ABSOLUTE_FILE_PATH##*.}"
+fi
 
 log_msg STEP "preparing_to_execute" "${C_CYAN}$ABSOLUTE_FILE_PATH${C_RESET}"
 log_msg INFO "file_type_detected" "${C_WHITE}.$EXT${C_RESET}"
@@ -308,7 +384,7 @@ if [[ -n "${LANG_TYPE[$EXT]}" ]]; then
     exit $exit_code
   else
     # Normal execution without timeout
-    "${_THIS_SCRIPT_DIR}/_compile_and_run.zsh" "$ABSOLUTE_FILE_PATH" "${PROG_ARGS[@]}"
+    "${_THIS_SCRIPT_DIR}/_compile_and_run.zsh" "$ABSOLUTE_FILE_PATH" "$EXT" "${PROG_ARGS[@]}"
   fi
 else
   log_msg ERROR "unsupported_file_type" "${C_WHITE}.$EXT${C_RESET}"

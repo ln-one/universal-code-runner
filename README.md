@@ -17,6 +17,7 @@ It's built for developers, students, and competitive programmers who want to tes
 -   **Concise & Verbose Modes**: By default, it runs in a concise mode for clean output. Use the `--verbose` flag to get detailed compilation and runtime information.
 -   **Multi-Language Support**: Works out of the box with C, C++, Java, Go, Rust, Python, JavaScript, TypeScript, PHP, Ruby, and more.
 -   **Auto-Detection**: If you don't specify a file, `ucode` automatically finds and executes the most recently modified source file.
+-   **Smart File Matching**: Run files by name without the extension. `ucode hello` will automatically find and run `hello.cpp`, `hello.py`, or any other supported file.
 -   **Seamless Argument Passing**: All arguments provided after the filename are passed directly to your program.
 -   **Zero Dependencies**: Besides Zsh and the language toolchains themselves, the script is fully self-contained.
 -   **Compilation Caching**: Automatically caches compilation results to avoid unnecessary recompilation of unchanged source files.

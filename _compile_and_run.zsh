@@ -5,10 +5,18 @@ source "${_THIS_SCRIPT_DIR}/_common.zsh"
 
 SRC_FILE=$1
 shift
+
+# Check if the second argument is a language extension (passed from ucode shebang detection)
+if [[ -n "$1" && -z "${1##*([a-z])}" && ${#1} -le 3 ]]; then
+    SRC_EXT=$1
+    shift
+else
+    SRC_EXT="${SRC_FILE##*.}"
+fi
+
 PROG_ARGS=("$@")
 
 SRC_FILENAME=$(basename "$SRC_FILE")
-SRC_EXT="${SRC_FILENAME##*.}"
 
 # Remove support for Go and TypeScript by overriding their type to 'unsupported'
 if [[ "$SRC_EXT" == "go" || "$SRC_EXT" == "ts" ]]; then
