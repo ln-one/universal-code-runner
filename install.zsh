@@ -8,23 +8,34 @@ source "./_common.zsh"
 # Installation and Uninstallation script for the Universal Code Runner utility.
 #
 # Usage:
-#   sudo ./install.zsh        # To install or update
-#   sudo ./install.zsh --uninstall  # To uninstall
+#   sudo ./install.zsh                    # Install to default location
+#   sudo ./install.zsh --uninstall        # Uninstall from default location
+#   sudo ./install.zsh --help             # Show help information
+#
+# Custom installation paths:
+#   sudo UCODE_INSTALL_DIR=/opt/ucode UCODE_BIN_DIR=/opt/bin ./install.zsh
+#
+# Environment Variables:
+#   UCODE_INSTALL_DIR  - Application directory (default: /usr/local/lib/ucode)
+#   UCODE_BIN_DIR      - Binary directory (default: /usr/local/bin)
 # ==============================================================================
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
 # --- Configuration ---
-APP_DIR="/usr/local/lib/ucode"
-BIN_DIR="/usr/local/bin"
+# Support custom installation paths via environment variables
+APP_DIR="${UCODE_INSTALL_DIR:-/usr/local/lib/ucode}"
+BIN_DIR="${UCODE_BIN_DIR:-/usr/local/bin}"
 EXEC_NAME="ucode"
 
 REQUIRED_FILES=("ucode" "_common.zsh" "_compile_and_run.zsh" "_config.zsh" "_messages.zsh" "_ui.zsh" "_cache.zsh" "_sandbox.zsh")
 
 
 # --- Pre-flight Checks ---
-if [[ $EUID -ne 0 ]]; then
+# Allow help to be shown without root privileges
+if [[ "$1" != "--help" && "$1" != "-h" && $EUID -ne 0 ]]; then
   log_msg ERROR "This script must be run with root privileges (e.g., 'sudo ./install.zsh')."
+  log_msg INFO "Use './install.zsh --help' to see usage information."
   exit 1
 fi
 
@@ -76,11 +87,62 @@ do_uninstall() {
   log_msg SUCCESS "Uninstallation complete!"
 }
 
+# --- Help Function ---
+show_help() {
+  cat <<EOF
+Universal Code Runner Installation Script
+
+USAGE:
+    sudo ./install.zsh [OPTIONS]
+
+OPTIONS:
+    --help          Show this help message
+    --uninstall     Uninstall Universal Code Runner
+
+CUSTOM INSTALLATION PATHS:
+    Use environment variables to customize installation paths:
+    
+    sudo UCODE_INSTALL_DIR=/opt/ucode UCODE_BIN_DIR=/opt/bin ./install.zsh
+
+ENVIRONMENT VARIABLES:
+    UCODE_INSTALL_DIR   Application directory (default: /usr/local/lib/ucode)
+    UCODE_BIN_DIR       Binary directory (default: /usr/local/bin)
+
+EXAMPLES:
+    # Install to default location
+    sudo ./install.zsh
+    
+    # Install to custom location
+    sudo UCODE_INSTALL_DIR=/opt/ucode ./install.zsh
+    
+    # Uninstall
+    sudo ./install.zsh --uninstall
+
+CURRENT CONFIGURATION:
+    Application Directory: ${C_CYAN}$APP_DIR${C_RESET}
+    Binary Directory:      ${C_CYAN}$BIN_DIR${C_RESET}
+    Executable Name:       ${C_CYAN}$EXEC_NAME${C_RESET}
+EOF
+}
+
 # --- Main Entry Point ---
 # The verbose flag doesn't apply here, we always want to see the steps.
 export RUNNER_VERBOSE=true
-if [[ "$1" == "--uninstall" ]]; then
-  do_uninstall
-else
-  do_install
-fi 
+
+case "$1" in
+  --help|-h)
+    show_help
+    exit 0
+    ;;
+  --uninstall)
+    do_uninstall
+    ;;
+  "")
+    do_install
+    ;;
+  *)
+    log_msg ERROR "Unknown option: $1"
+    log_msg INFO "Use --help for usage information"
+    exit 1
+    ;;
+esac 

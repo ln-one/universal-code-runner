@@ -84,7 +84,8 @@ OUT_NAME=$(basename "$SRC_FILENAME" ".$SRC_EXT")
 
 # --- JVM Compilation ---
 if [[ "$TYPE" == "compile_jvm" ]]; then
-    local jvm_runner="java" # Runner is hardcoded for JVM
+    local jvm_runner=$(get_jvm_runner "$SRC_EXT")
+    local cache_pattern=$(get_jvm_cache_pattern "$SRC_EXT")
     check_dependencies_new "$COMPILER" "$jvm_runner"
     check_dependencies_new "zip" "unzip"  
     
@@ -108,7 +109,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
             # Extract the cached class files directly to the source directory
             debug_log "extracting_cache" "${src_dir}"
             
-            unzip -q -o -j "$cached_zip" "*.class" -d "$src_dir"
+            unzip -q -o -j "$cached_zip" "$cache_pattern" -d "$src_dir"
             
             log_msg SUCCESS "using_cached_compilation"
             log_msg INFO "executing"
@@ -140,15 +141,15 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
             local src_hash=$(get_source_hash "$SRC_FILE" "$COMPILER")
             local cached_zip="${cache_dir}/${src_hash}.zip"
             
-            # Check if there are any class files to cache
-            if ls "$src_dir"/*.class &>/dev/null; then
+            # Check if there are any output files to cache
+            if ls "$src_dir"/$cache_pattern &>/dev/null; then
                 debug_log "found_files_to_cache" "${src_dir}"
                 
                 local current_dir=$(pwd)
                 
                 cd "$src_dir" || exit 1
                 
-                zip -q "${cached_zip}" *.class
+                zip -q "${cached_zip}" $cache_pattern
                 
                 cd "$current_dir" || exit 1
                 
