@@ -7,6 +7,7 @@
 _THIS_SCRIPT_DIR=${0:A:h}
 
 # Load dedicated modules
+source "${_THIS_SCRIPT_DIR}/_config.zsh"   # Configuration and language definitions
 source "${_THIS_SCRIPT_DIR}/_messages.zsh" # Message and internationalization functions
 source "${_THIS_SCRIPT_DIR}/_ui.zsh"      # UI and logging functions
 source "${_THIS_SCRIPT_DIR}/_cache.zsh"    # Cache functions
@@ -79,12 +80,7 @@ validate_args() {
   echo "${sanitized_args[@]}"
 }
 
-# ==============================================================================
-# Global Configuration
-# ==============================================================================
-# Default resource limits
-export RUNNER_TIMEOUT=0       # Default: no timeout (in seconds)
-export RUNNER_MEMORY_LIMIT=0  # Default: no memory limit (in MB)
+# Note: Global configuration is now in _config.zsh to avoid duplication
 
 # ==============================================================================
 # Resource Limiting Functions
@@ -229,104 +225,7 @@ run_in_sandbox() {
 
 # Note: Color definitions are now in _ui.zsh to avoid duplication
 
-# ==============================================================================
-# Standardized UI / Logging Functions
-# ==============================================================================
-
-# Spinner animation for long-running operations
-# Usage: start_spinner <file_name>
-start_spinner() {
-  local file_name="$1"
-  local msg=$(get_msg "compiling_file" "$file_name")
-  
-  # Set the spin characters according to terminal support
-  local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
-  if [[ "$RUNNER_ASCII_MODE" == "true" ]]; then
-    chars="|/-\\"
-  fi
-
-  # Store spinner PID so we can kill it later
-  # Use subshell to avoid messing with the current shell settings
-  (
-    # Hide cursor
-    printf "\033[?25l"
-    
-    # Setup cleanup trap
-    trap 'printf "\033[?25h"; exit 0' INT TERM EXIT
-    
-    local i=0
-    local len=${#chars}
-    while true; do
-      local char="${chars:$i:1}"
-      # Print spinner character and message
-      printf "${C_BLUE}%s${C_RESET} %s\r" "$char" "$msg"
-      sleep 0.1
-      # Move to next character
-      i=$(( (i + 1) % len ))
-    done
-  ) &
-  SPINNER_PID=$!
-}
-
-# Stop the spinner
-stop_spinner() {
-  # Kill spinner process
-  if [[ -n "$SPINNER_PID" ]]; then
-    kill "$SPINNER_PID" &>/dev/null
-    wait "$SPINNER_PID" &>/dev/null || true
-    unset SPINNER_PID
-    # Show cursor again
-    printf "\033[?25h"
-    # Clear the line
-    printf "\r\033[K"
-  fi
-}
-
-# Detect available syntax highlighting tools
-detect_highlighter() {
-  if command -v pygmentize &>/dev/null; then
-    echo "pygmentize"
-  elif command -v highlight &>/dev/null; then
-    echo "highlight"
-  elif command -v bat &>/dev/null; then
-    echo "bat"
-  else
-    echo ""
-  fi
-}
-
-# Apply syntax highlighting to code snippets if available tools exist
-# Usage: highlight_code <file_content> <extension>
-highlight_code() {
-  local content="$1"
-  local extension="$2"
-  local highlighter=$(detect_highlighter)
-  
-  # Skip if no highlighter available or not a terminal
-  if [[ -z "$highlighter" || ! -t 1 ]]; then
-    echo "$content"
-    return
-  fi
-  
-  case "$highlighter" in
-    pygmentize)
-      # Use a temporary file for pygmentize to properly detect syntax
-      local tmp_file=$(mktemp)
-      echo "$content" > "$tmp_file"
-      pygmentize -f terminal -l "$extension" "$tmp_file" || cat "$tmp_file"
-      rm "$tmp_file"
-      ;;
-    highlight)
-      echo "$content" | highlight --syntax="$extension" --out-format=ansi || echo "$content"
-      ;;
-    bat)
-      echo "$content" | bat --color=always --language="$extension" --plain || echo "$content"
-      ;;
-    *)
-      echo "$content"
-      ;;
-  esac
-}
+# Note: UI functions (spinner, highlighting) are now in _ui.zsh to avoid duplication
 
 # Note: log_msg function is defined in _ui.zsh to avoid duplication
 
@@ -351,21 +250,7 @@ check_dependencies_new() {
 
 # Note: Old color definitions removed - now using unified colors from _ui.zsh
 
-typeset -gA LANG_CONFIG
-LANG_CONFIG=(
-  # ext   type         compiler   flags_var  default_flags                     runner
-  c       "compile:gcc:CFLAGS:-std=c17 -Wall -Wextra -O2:"
-  cpp     "compile:g++:CXXFLAGS:-std=c++17 -Wall -Wextra -O2:"
-  rs      "compile:rustc:RUSTFLAGS:-C opt-level=2:"
-  java    "compile_jvm:javac:::-"
-  py      "direct::::python3"
-  js      "direct::::node"
-  php     "direct::::php"
-  rb      "direct::::ruby"
-  sh      "direct::::bash"
-  pl      "direct::::perl"
-  lua     "direct::::lua"
-)
+# Note: Language configuration (LANG_CONFIG) is now in _config.zsh to avoid duplication
 
 check_dependencies() {
   for dep in "$@"; do
