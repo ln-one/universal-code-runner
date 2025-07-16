@@ -102,41 +102,6 @@ validate_args() {
   return 0
 }
 
-# Run a command with timeout
-# Usage: run_with_timeout <timeout_seconds> <cmd> [args...]
-run_with_timeout() {
-  local timeout="$1"
-  shift
-  local cmd="$1"
-  shift
-  local args=("$@")
-  
-  # If timeout is 0 or not set, run without timeout
-  if [[ -z "$timeout" || "$timeout" -eq 0 ]]; then
-    "$cmd" "${args[@]}"
-    return $?
-  fi
-  
-  # Check if timeout command is available
-  if ! command -v timeout &>/dev/null; then
-    log_msg WARN "timeout_not_found"
-    "$cmd" "${args[@]}"
-    return $?
-  fi
-  
-  log_msg INFO "time_limit" "${C_YELLOW}${timeout}s${C_RESET}"
-  # Use timeout command with kill-after option to ensure termination
-  timeout --kill-after=2 --signal=TERM "$timeout" "$cmd" "${args[@]}"
-  local exit_code=$?
-  
-  # Check if the command was terminated due to timeout
-  if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
-    log_msg ERROR "execution_timeout" "${C_YELLOW}${timeout}s${C_RESET}"
-  fi
-  
-  return $exit_code
-}
-
 # Wrapper for `check_dependencies` to use the new logger.
 check_dependencies_new() {
   for dep in "$@"; do
