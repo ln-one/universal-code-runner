@@ -3,6 +3,14 @@
 # Common configuration and functions for the Universal Code Runner scripts.
 # ==============================================================================
 
+# 获取当前脚本目录
+_THIS_SCRIPT_DIR=${0:A:h}
+
+# 加载专用模块
+source "${_THIS_SCRIPT_DIR}/_ui.zsh"      # UI 和日志函数
+source "${_THIS_SCRIPT_DIR}/_cache.zsh"    # 缓存函数
+source "${_THIS_SCRIPT_DIR}/_sandbox.zsh"  # 沙箱函数
+
 # ==============================================================================
 # Input Validation Functions
 # ==============================================================================
@@ -442,13 +450,13 @@ typeset -gA MSG_EN MSG_ZH
 # English messages
 MSG_EN=(
   "time_limit"                 "Time limit: %s"
-  "execution_timeout"          "Program execution timed out after %s"
+  "execution_timeout"          "Program execution timed out and was terminated after %s"
   "running_with"               "Running with %s..."
-  "checking_cache"             "Checking for cached class files for %s"
+  "checking_cache"             "Checking compilation cache for %s"
   "found_cache"                "Found cached class files at %s"
   "extracting_cache"           "Extracting cached class files to %s"
-  "using_cached_compilation"   "Using cached class files from previous compilation"
-  "using_cached_binary"        "Using cached binary from previous compilation"
+  "using_cached_compilation"   "Using previously compiled cached class files"
+  "using_cached_binary"        "Using previously compiled cached binary"
   "executing"                  "Executing..."
   "no_valid_cache"             "No valid cache found for %s"
   "compiling"                  "Compiling %s..."
@@ -456,13 +464,13 @@ MSG_EN=(
   "compilation_successful"     "Compilation successful!"
   "caching_files"              "Attempting to cache class files for %s"
   "found_files_to_cache"       "Found class files to cache in %s"
-  "saved_to_cache"             "Saved class files to cache: %s"
-  "failed_to_cache"            "Failed to create cache file at: %s"
+  "saved_to_cache"             "Class files cached to: %s"
+  "failed_to_cache"            "Failed to create cache file: %s"
   "no_files_to_cache"          "No class files found to cache for %s"
   "compilation_failed"         "Compilation failed for %s."
-  "unknown_language"           "Unknown language type '%s' for extension '.%s'."
-  "no_sandbox_tech"            "No sandbox technology found. Code will run without sandbox protection."
-  "install_sandbox"            "Install firejail, nsjail, bubblewrap, or use systemd for sandbox support."
+  "unknown_language"           "Unknown language type '%s' with extension '.%s'."
+  "no_sandbox_tech"            "No sandbox technology found, code will run without sandbox protection."
+  "install_sandbox"            "Please install firejail, nsjail, bubblewrap, or use systemd for sandbox support."
   "missing_timeout_value"      "Missing value for --timeout option"
   "missing_memory_value"       "Missing value for --memory option"
   "cache_cleaned"              "Compilation cache cleaned"
@@ -471,21 +479,21 @@ MSG_EN=(
   "args_quoted"                "Arguments containing shell metacharacters will be quoted for safety"
   "using_file"                 "Using specified file: %s"
   "file_not_exist"             "Specified file does not exist: %s"
-  "searching_file"             "No file provided or argument is not a file. Searching for the most recently modified code file..."
+  "searching_file"             "No file provided or argument is not a file. Searching for most recently modified source code file..."
   "no_supported_files"         "No supported code files found. Supported extensions: %s"
-  "auto_selected_file"         "Automatically selected file: %s"
-  "file_not_found"             "File does not exist: %s"
+  "auto_selected_file"         "Auto-selected file: %s"
+  "file_not_found"             "File not found: %s"
   "preparing_to_execute"       "Preparing to execute: %s"
   "file_type_detected"         "File type detected: %s"
   "unsupported_file_type"      "Unsupported file type: %s"
   "supported_types"            "Supported types are: %s"
   "required_command_not_found" "Required command not found: %s"
-  "please_install"             "Please install it and ensure it's in your PATH."
-  "sandbox_mode"               "Running in sandbox mode using %s"
+  "please_install"             "Please install it and make sure it's in your PATH."
+  "sandbox_mode"               "Running in sandbox mode with %s"
   "timeout_not_found"          "Timeout command not found. Running without timeout limit."
-  "program_output"             "PROGRAM OUTPUT"
+  "program_output"             "Program Output"
   "program_completed"          "Program completed successfully"
-  "program_timed_out"          "Program timed out"
+  "program_timed_out"          "Program execution timed out"
   "program_exited_with_code"   "Program exited with code %s"
   "compiling_file"             "Compiling %s"
   "compiling_with_flags_msg"   "Compiling %s with flags: %s"
@@ -494,7 +502,7 @@ MSG_EN=(
   "status_timed_out"           "timed out"
   "status_exited_with_code"    "exited with code %s"
   "program_completed_full"     "Program completed successfully"
-  "program_timed_out_full"     "Program timed out"
+  "program_timed_out_full"     "Program execution timed out"
   "program_exited_with_code_full" "Program exited with code %s"
 )
 
@@ -758,137 +766,7 @@ execute_and_show_output() {
     echo -e "\n${BLUE_OLD}📊 ${YELLOW_OLD}${status_msg}${RESET_OLD}"
   fi
   return $exit_code
-} 
-# ==============================================================================
-# Compilation Cache Functions
-# ==============================================================================
-
-# Get the cache directory path, creating it if it doesn't exist
-# Returns the path to the cache directory
-get_cache_dir() {
-  local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ucode"
-  
-  # Create the cache directory if it doesn't exist
-  if [[ ! -d "$cache_dir" ]]; then
-    mkdir -p "$cache_dir"
-    log_msg DEBUG "Created cache directory: ${C_CYAN}${cache_dir}${C_RESET}"
-  fi
-  
-  echo "$cache_dir"
 }
 
-# Generate a hash for a source file based on its content and compilation flags
-# Usage: get_source_hash <source_file> <compiler> <flags...>
-get_source_hash() {
-  local src_file="$1"
-  local compiler="$2"
-  shift 2
-  local flags=("$@")
-  
-  # Get the absolute path of the compiler to ensure consistency
-  local compiler_path=$(command -v "$compiler")
-  
-  # Combine source file content, compiler path, and flags to create a unique hash
-  {
-    cat "$src_file"
-    echo "$compiler_path"
-    echo "${flags[@]}"
-  } | sha256sum | cut -d' ' -f1 | cut -c1-32  # 只使用前32个字符，避免文件名过长
-}
-
-# Check if a cached binary exists and is valid
-# Usage: check_cache <source_file> <compiler> <flags...>
-# Returns: Path to cached binary if exists, empty string otherwise
-check_cache() {
-  local src_file="$1"
-  local compiler="$2"
-  shift 2
-  local flags=("$@")
-  
-  # Skip cache if disabled
-  if [[ "$RUNNER_DISABLE_CACHE" == "true" ]]; then
-    return 1
-  fi
-  
-  # Generate hash for the source file
-  local src_hash=$(get_source_hash "$src_file" "$compiler" "${flags[@]}")
-  local cache_dir=$(get_cache_dir)
-  local cached_binary="${cache_dir}/${src_hash}"
-  
-  # Check if cached binary exists and is executable
-  if [[ -f "$cached_binary" && -x "$cached_binary" ]]; then
-    # Check if the cache is too old (default: 7 days)
-    local max_cache_age=${RUNNER_MAX_CACHE_AGE:-604800}  # 7 days in seconds
-    local current_time=$(date +%s)
-    local cache_time=$(stat -c %Y "$cached_binary" 2>/dev/null)
-    
-    if [[ $((current_time - cache_time)) -gt $max_cache_age ]]; then
-      log_msg DEBUG "Cache expired for ${C_CYAN}$(basename "$src_file")${C_RESET}"
-      rm -f "$cached_binary"
-      return 1
-    fi
-    
-    log_msg DEBUG "Using cached binary for ${C_CYAN}$(basename "$src_file")${C_RESET}"
-    echo "$cached_binary"
-    return 0
-  fi
-  
-  return 1
-}
-
-# Save a compiled binary to the cache
-# Usage: save_to_cache <binary_path> <source_file> <compiler> <flags...>
-save_to_cache() {
-  local binary_path="$1"
-  local src_file="$2"
-  local compiler="$3"
-  shift 3
-  local flags=("$@")
-  
-  # Skip cache if disabled
-  if [[ "$RUNNER_DISABLE_CACHE" == "true" ]]; then
-    return 1
-  fi
-  
-  # Generate hash for the source file
-  local src_hash=$(get_source_hash "$src_file" "$compiler" "${flags[@]}")
-  local cache_dir=$(get_cache_dir)
-  local cached_binary="${cache_dir}/${src_hash}"
-  
-  # Copy the binary to the cache
-  cp "$binary_path" "$cached_binary"
-  chmod +x "$cached_binary"
-  
-  log_msg DEBUG "Saved binary to cache: ${C_CYAN}${cached_binary}${C_RESET}"
-  echo "$cached_binary"
-}
-
-# Clean old cache files
-# Usage: clean_cache [max_age_in_seconds] [force]
-clean_cache() {
-  local max_age=${1:-604800}  # Default: 7 days
-  local force=${2:-false}     # Default: don't force clean
-  local cache_dir=$(get_cache_dir)
-  
-  if [[ "$force" == "true" ]]; then
-    # Force clean all cache files
-    rm -rf "${cache_dir:?}"/* 2>/dev/null
-    log_msg DEBUG "Forced cleaning of all cache files"
-  else
-    # Find and remove cache files older than max_age
-    find "$cache_dir" -type f -mtime +$((max_age / 86400)) -delete 2>/dev/null
-    log_msg DEBUG "Cleaned cache files older than $((max_age / 86400)) days"
-  fi
-}
-
-# Initialize cache system
-init_cache() {
-  # Clean cache on startup (once per session)
-  if [[ "$RUNNER_CACHE_CLEANED" != "true" ]]; then
-    clean_cache
-    export RUNNER_CACHE_CLEANED="true"
-  fi
-}
-
-# Call init_cache to set up the cache system
+# 初始化缓存系统
 init_cache 

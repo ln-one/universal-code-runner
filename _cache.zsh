@@ -3,6 +3,9 @@
 # Compilation Cache Functions for the Universal Code Runner
 # ==============================================================================
 
+# 获取当前脚本目录
+_THIS_SCRIPT_DIR=${0:A:h}
+
 # ==============================================================================
 # Compilation Cache Functions
 # ==============================================================================
@@ -15,6 +18,8 @@ get_cache_dir() {
   # Create the cache directory if it doesn't exist
   if [[ ! -d "$cache_dir" ]]; then
     mkdir -p "$cache_dir"
+    # 注意：这里依赖于 _ui.zsh 中的 log_msg 函数
+    # 在 _common.zsh 中已经 source 了 _ui.zsh 和 _cache.zsh，所以函数调用顺序已经正确
     log_msg DEBUG "Created cache directory: ${C_CYAN}${cache_dir}${C_RESET}"
   fi
   
@@ -134,5 +139,6 @@ init_cache() {
   fi
 }
 
-# Call init_cache to set up the cache system
-init_cache
+# 不要在这里调用 init_cache，而是在 _common.zsh 中调用
+# 这样可以避免在 _common.zsh 中 source _cache.zsh 时重复初始化
+# init_cache

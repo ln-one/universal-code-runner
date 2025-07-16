@@ -3,6 +3,9 @@
 # Sandbox Execution Functions for the Universal Code Runner
 # ==============================================================================
 
+# 获取当前脚本目录
+_THIS_SCRIPT_DIR=${0:A:h}
+
 # ==============================================================================
 # Sandbox Execution
 # ==============================================================================
@@ -46,6 +49,8 @@ run_in_sandbox() {
   
   # Use firejail as our primary sandbox technology
   if command -v firejail &>/dev/null; then
+    # 注意：这里依赖于 _ui.zsh 中的 log_msg 函数
+    # 在 _common.zsh 中已经 source 了 _ui.zsh 和 _sandbox.zsh，所以函数调用顺序已经正确
     log_msg INFO "Running in sandbox mode with ${C_CYAN}firejail${C_RESET}"
     if [[ "$RUNNER_MEMORY_LIMIT" -gt 0 ]]; then
       log_msg INFO "Memory limit: ${C_YELLOW}${memory_limit}MB${C_RESET}"

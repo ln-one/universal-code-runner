@@ -3,6 +3,9 @@
 # UI and Logging Functions for the Universal Code Runner
 # ==============================================================================
 
+# 获取当前脚本目录
+_THIS_SCRIPT_DIR=${0:A:h}
+
 # ==============================================================================
 # Colors and Styling (tput for compatibility)
 # ==============================================================================
@@ -30,6 +33,8 @@ fi
 # Usage: start_spinner <file_name>
 start_spinner() {
   local file_name="$1"
+  # 注意：这里依赖于 _common.zsh 中的 get_msg 函数
+  # 在 _common.zsh 中已经 source 了 _ui.zsh，所以 get_msg 函数在调用 start_spinner 时已经可用
   local msg=$(get_msg "compiling_file" "$file_name")
   
   # Set the spin characters according to terminal support
@@ -189,6 +194,7 @@ log_msg() {
     esac
 
     # Get the message in the current language
+    # 注意：这里依赖于 _common.zsh 中的 get_msg 函数
     local msg=$(get_msg "$msg_key" "$@")
 
     # If a message style is defined, we must ensure it persists even if the
@@ -199,5 +205,6 @@ log_msg() {
       msg=${msg//"$C_RESET"/"$C_RESET$msg_style"}
     fi
 
-    printf "%s %s%s%s\n" "$color_prefix" "$msg_style" "$msg" "$C_RESET"
+    # Print the message with appropriate styling
+    echo -e "${color_prefix} ${msg_style}${msg}${C_RESET}"
 }
