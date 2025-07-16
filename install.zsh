@@ -18,7 +18,9 @@ set -e # Exit immediately if a command exits with a non-zero status.
 APP_DIR="/usr/local/lib/ucode"
 BIN_DIR="/usr/local/bin"
 EXEC_NAME="ucode"
-REQUIRED_FILES=("ucode" "_common.zsh" "_compile_and_run.zsh" "_ui.zsh" "_cache.zsh" "_sandbox.zsh")
+
+REQUIRED_FILES=("ucode" "_common.zsh" "_compile_and_run.zsh" "_config.zsh" "_messages.zsh" "_ui.zsh" "_cache.zsh" "_sandbox.zsh")
+
 
 # --- Pre-flight Checks ---
 if [[ $EUID -ne 0 ]]; then

@@ -20,7 +20,7 @@ get_cache_dir() {
     mkdir -p "$cache_dir"
     # Note: This depends on the log_msg function in _ui.zsh
     # _common.zsh already sources _ui.zsh and _cache.zsh, so the function call order is correct
-    log_msg DEBUG "Created cache directory: ${C_CYAN}${cache_dir}${C_RESET}"
+    debug_log "Created cache directory" "${cache_dir}"
   fi
   
   echo "$cache_dir"
@@ -72,12 +72,12 @@ check_cache() {
     local cache_time=$(stat -c %Y "$cached_binary" 2>/dev/null)
     
     if [[ $((current_time - cache_time)) -gt $max_cache_age ]]; then
-      log_msg DEBUG "Cache expired for ${C_CYAN}$(basename "$src_file")${C_RESET}"
+      debug_log "Cache expired for" "$(basename "$src_file")"
       rm -f "$cached_binary"
       return 1
     fi
     
-    log_msg DEBUG "Using cached binary for ${C_CYAN}$(basename "$src_file")${C_RESET}"
+    debug_log "Using cached binary for" "$(basename "$src_file")"
     echo "$cached_binary"
     return 0
   fi
@@ -108,7 +108,7 @@ save_to_cache() {
   cp "$binary_path" "$cached_binary"
   chmod +x "$cached_binary"
   
-  log_msg DEBUG "Saved binary to cache: ${C_CYAN}${cached_binary}${C_RESET}"
+  debug_log "Saved binary to cache" "${cached_binary}"
   echo "$cached_binary"
 }
 
@@ -122,11 +122,11 @@ clean_cache() {
   if [[ "$force" == "true" ]]; then
     # Force clean all cache files
     rm -rf "${cache_dir:?}"/* 2>/dev/null
-    log_msg DEBUG "Forced cleaning of all cache files"
+    debug_log "Forced cleaning of all cache files" ""
   else
     # Find and remove cache files older than max_age
     find "$cache_dir" -type f -mtime +$((max_age / 86400)) -delete 2>/dev/null
-    log_msg DEBUG "Cleaned cache files older than $((max_age / 86400)) days"
+    debug_log "Cleaned cache files older than" "$((max_age / 86400)) days"
   fi
 }
 
