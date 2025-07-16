@@ -121,6 +121,28 @@ ucode --memory 100 my_program.c
 ucode --sandbox my_program.py
 ```
 
+## ⚙️ Configuration File Support
+
+Universal Code Runner supports user configuration files for default settings.
+
+- Supported locations (checked in order):
+  1. `./ucode.conf` (project root)
+  2. `~/.ucoderc` (user home)
+- Format: simple shell variable assignments, e.g.:
+  ```sh
+  # ~/.ucoderc or ./ucode.conf
+  RUNNER_TIMEOUT=10
+  RUNNER_MEMORY_LIMIT=256
+  RUNNER_LANGUAGE="zh"
+  RUNNER_DISABLE_CACHE=false
+  RUNNER_SANDBOX=true
+  RUNNER_VERBOSE=true
+  ```
+- **Priority:** command-line arguments > config file > script defaults
+- Loaded automatically before argument parsing in `ucode`.
+
+This enables project-wide or user-wide default settings and paves the way for future extensibility (e.g., plugin config, custom language options).
+
 ---
 
 ## 🔧 Extending Language Support

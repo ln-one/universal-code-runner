@@ -103,6 +103,13 @@ function show_help() {
 #  🚀 Entry Point & Logic
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+# --- Load config file if present ---
+if [[ -f "./ucode.conf" ]]; then
+  source "./ucode.conf"
+elif [[ -f "$HOME/.ucoderc" ]]; then
+  source "$HOME/.ucoderc"
+fi
+
 # --- Argument Parsing ---
 export RUNNER_VERBOSE=false
 export RUNNER_ASCII_MODE=false
