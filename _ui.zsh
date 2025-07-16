@@ -208,3 +208,18 @@ log_msg() {
     # Print the message with appropriate styling
     echo -e "${color_prefix} ${msg_style}${msg}${C_RESET}"
 }
+
+# Simplified debug logging function for common patterns
+# Usage: debug_log <message_key> <highlighted_value>
+debug_log() {
+  local msg_key="$1"
+  local value="$2"
+  
+  # Only proceed if debug mode is enabled
+  if [[ "$RUNNER_DEBUG" != "true" ]]; then
+    return 0
+  fi
+  
+  # Use the standard log_msg function with cyan highlighting
+  log_msg DEBUG "$msg_key" "${C_CYAN}${value}${C_RESET}"
+}

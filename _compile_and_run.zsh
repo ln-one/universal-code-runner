@@ -94,7 +94,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
     
     # Check if we have a cached class file
     if [[ "$RUNNER_DISABLE_CACHE" != "true" ]]; then
-        log_msg DEBUG "checking_cache" "${C_CYAN}${SRC_FILENAME}${C_RESET}"
+        debug_log "checking_cache" "${SRC_FILENAME}"
         
         # Generate hash for the source file
         local cache_dir=$(get_cache_dir)
@@ -103,10 +103,10 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
         
         # Check if cached zip exists
         if [[ -f "$cached_zip" ]]; then
-            log_msg DEBUG "found_cache" "${C_CYAN}${cached_zip}${C_RESET}"
+            debug_log "found_cache" "${cached_zip}"
             
             # Extract the cached class files directly to the source directory
-            log_msg DEBUG "extracting_cache" "${C_CYAN}${src_dir}${C_RESET}"
+            debug_log "extracting_cache" "${src_dir}"
             
             unzip -q -o -j "$cached_zip" "*.class" -d "$src_dir"
             
@@ -121,7 +121,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
             fi
             exit $?
         else
-            log_msg DEBUG "no_valid_cache" "${C_CYAN}${SRC_FILENAME}${C_RESET}"
+            debug_log "no_valid_cache" "${SRC_FILENAME}"
         fi
     fi
     
@@ -134,7 +134,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
         
         # Save the class files to cache if caching is enabled
         if [[ "$RUNNER_DISABLE_CACHE" != "true" ]]; then
-            log_msg DEBUG "caching_files" "${C_CYAN}${SRC_FILENAME}${C_RESET}"
+            debug_log "caching_files" "${SRC_FILENAME}"
             # For Java, we need to zip all the class files and cache the zip
             local cache_dir=$(get_cache_dir)
             local src_hash=$(get_source_hash "$SRC_FILE" "$COMPILER")
@@ -142,7 +142,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
             
             # Check if there are any class files to cache
             if ls "$src_dir"/*.class &>/dev/null; then
-                log_msg DEBUG "found_files_to_cache" "${C_CYAN}${src_dir}${C_RESET}"
+                debug_log "found_files_to_cache" "${src_dir}"
                 
                 local current_dir=$(pwd)
                 
@@ -156,12 +156,12 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
                 if [[ -f "${cached_zip}" ]]; then
                     # Make sure the zip file is readable
                     chmod 644 "${cached_zip}"
-                    log_msg DEBUG "saved_to_cache" "${C_CYAN}${cached_zip}${C_RESET}"
+                    debug_log "saved_to_cache" "${cached_zip}"
                 else
-                    log_msg DEBUG "failed_to_cache" "${C_CYAN}${cached_zip}${C_RESET}"
+                    debug_log "failed_to_cache" "${cached_zip}"
                 fi
             else
-                log_msg DEBUG "no_files_to_cache" "${C_CYAN}${SRC_FILENAME}${C_RESET}"
+                debug_log "no_files_to_cache" "${SRC_FILENAME}"
             fi
         fi
         
