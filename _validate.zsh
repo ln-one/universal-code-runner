@@ -3,34 +3,35 @@
 # Input Validation Functions for the Universal Code Runner
 # ==============================================================================
 
-# 加载UI模块（用于日志功能）
-[[ -f "${0:A:h}/_ui.zsh" ]] && source "${0:A:h}/_ui.zsh"
+# Load UI module (for logging functions)
+source "${0:A:h}/_ui.zsh"
 
 # ==============================================================================
 # Input Validation Functions
 # ==============================================================================
 
-# Validate a numeric input
-# Usage: validate_numeric <value> <param_name> <min> <max>
+# Validate that a value is numeric and within a specified range
+# Usage: validate_numeric <value> <min> <max> <param_name>
+# Returns: 0 if valid, 1 if invalid
 validate_numeric() {
   local value="$1"
-  local param_name="$2"
-  local min="$3"
-  local max="$4"
+  local min="$2"
+  local max="$3"
+  local param_name="$4"
   
   # Check if the value is a number
-  if [[ ! "$value" =~ ^[0-9]+$ ]]; then
-    log_msg ERROR "${param_name} must be a positive number"
+  if ! [[ "$value" =~ ^[0-9]+$ ]]; then
+    log_msg ERROR "${param_name} must be a positive integer"
     return 1
   fi
   
-  # Check if the value is within range
-  if [[ -n "$min" && "$value" -lt "$min" ]]; then
+  # Check if the value is within the specified range
+  if (( value < min )); then
     log_msg ERROR "${param_name} must be at least ${min}"
     return 1
   fi
   
-  if [[ -n "$max" && "$value" -gt "$max" ]]; then
+  if (( value > max )); then
     log_msg ERROR "${param_name} must be at most ${max}"
     return 1
   fi
@@ -38,39 +39,67 @@ validate_numeric() {
   return 0
 }
 
-# Sanitize a filename to prevent path traversal attacks
-# Usage: sanitize_filename <filename>
-sanitize_filename() {
-  local filename="$1"
+# Validate that a file exists and is readable
+# Usage: validate_file <file_path>
+# Returns: 0 if valid, 1 if invalid
+validate_file() {
+  local file_path="$1"
   
-  # Remove any leading path components
-  filename=$(basename "$filename")
+  if [[ ! -f "$file_path" ]]; then
+    log_msg ERROR "File not found: ${file_path}"
+    return 1
+  fi
   
-  # Remove any special characters
-  filename=${filename//[^a-zA-Z0-9._-]/}
+  if [[ ! -r "$file_path" ]]; then
+    log_msg ERROR "File is not readable: ${file_path}"
+    return 1
+  fi
   
-  echo "$filename"
+  return 0
 }
 
-# Validate command line arguments to prevent injection attacks
-# Usage: validate_args <args...>
+# Validate that a directory exists and is writable
+# Usage: validate_directory <dir_path>
+# Returns: 0 if valid, 1 if invalid
+validate_directory() {
+  local dir_path="$1"
+  
+  if [[ ! -d "$dir_path" ]]; then
+    log_msg ERROR "Directory not found: ${dir_path}"
+    return 1
+  fi
+  
+  if [[ ! -w "$dir_path" ]]; then
+    log_msg ERROR "Directory is not writable: ${dir_path}"
+    return 1
+  fi
+  
+  return 0
+}
+
+# Validate command line arguments
+# Usage: validate_args <args_array>
+# Returns: 0 if valid, 1 if invalid
 validate_args() {
-  local args=("$@")
-  local sanitized_args=()
+  local -a args=("$@")
   
-  for arg in "${args[@]}"; do
-    # Check for potentially dangerous characters
-    if echo "$arg" | grep -q '[;&|<>$()\\`]'; then
-      log_msg WARN "unsafe_arg" "${C_YELLOW}${arg}${C_RESET}"
-      log_msg INFO "args_quoted"
-      # Quote the argument to prevent interpretation
-      arg="'${arg//\'/\'\\\'\'}'"
+  # Validate timeout value
+  if [[ -n "$RUNNER_TIMEOUT" ]]; then
+    validate_numeric "$RUNNER_TIMEOUT" 1 3600 "Timeout"
+    if [[ $? -ne 0 ]]; then
+      return 1
     fi
-    
-    sanitized_args+=("$arg")
-  done
+  fi
   
-  echo "${sanitized_args[@]}"
+  # Validate memory limit
+  if [[ -n "$RUNNER_MEMORY_LIMIT" && "$RUNNER_MEMORY_LIMIT" -ne 0 ]]; then
+    validate_numeric "$RUNNER_MEMORY_LIMIT" 50 4096 "Memory limit"
+    if [[ $? -ne 0 ]]; then
+      return 1
+    fi
+  fi
+  
+  return 0
 }
 
 # Run a command with timeout

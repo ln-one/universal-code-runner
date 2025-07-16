@@ -1,127 +1,132 @@
 #!/usr/bin/env zsh
 # ==============================================================================
-# Common configuration and functions for the Universal Code Runner scripts.
+# Common Functions for the Universal Code Runner
 # ==============================================================================
 
-# 获取脚本所在目录
-_COMMON_DIR=${0:A:h}
+# Get the script directory
+SCRIPT_DIR=${0:A:h}
 
-# 加载所有模块
-[[ -f "${_COMMON_DIR}/_config.zsh" ]] && source "${_COMMON_DIR}/_config.zsh"
-[[ -f "${_COMMON_DIR}/_ui.zsh" ]] && source "${_COMMON_DIR}/_ui.zsh"
-[[ -f "${_COMMON_DIR}/_i18n.zsh" ]] && source "${_COMMON_DIR}/_i18n.zsh"
-[[ -f "${_COMMON_DIR}/_validate.zsh" ]] && source "${_COMMON_DIR}/_validate.zsh"
-[[ -f "${_COMMON_DIR}/_sandbox.zsh" ]] && source "${_COMMON_DIR}/_sandbox.zsh"
-[[ -f "${_COMMON_DIR}/_cache.zsh" ]] && source "${_COMMON_DIR}/_cache.zsh"
+# Load all modules
+source "${SCRIPT_DIR}/_ui.zsh"
+source "${SCRIPT_DIR}/_i18n.zsh"
+source "${SCRIPT_DIR}/_validate.zsh"
+source "${SCRIPT_DIR}/_config.zsh"
+source "${SCRIPT_DIR}/_cache.zsh"
+source "${SCRIPT_DIR}/_sandbox.zsh"
 
 # ==============================================================================
-# Execute and Show Output
+# Core Execution Function
 # ==============================================================================
 
-# Execute a command and show its output with formatting
+# Execute a command and display its output
 # Usage: execute_and_show_output <cmd> [args...]
 execute_and_show_output() {
   local cmd="$1"
   shift
   local args=("$@")
-  local ext=""
-  
-  # Try to detect the language from the command or first argument for highlighting
-  case "$cmd" in
-    *python*|*py*)
-      ext="py"
-      ;;
-    *node*)
-      ext="js"
-      ;;
-    *perl*)
-      ext="pl"
-      ;;
-    *ruby*)
-      ext="rb"
-      ;;
-    *bash*|*sh*)
-      ext="sh"
-      ;;
-    *php*)
-      ext="php"
-      ;;
-    *java*)
-      ext="java"
-      ;;
-    *)
-      # Try to detect from file extension of the first argument
-      if [[ -n "$1" && "$1" == *.* ]]; then
-        ext="${1##*.}"
-      fi
-      ;;
-  esac
-  
-  # Get program output header in the current language
-  local program_output=$(get_msg "program_output")
-  
-  echo -e "${MAGENTA_OLD}┌────────────────────── ${WHITE_OLD}${program_output}${MAGENTA_OLD} ──────────────────────┐${RESET_OLD}"
-  
-  # Capture program output - use run_in_sandbox if sandbox mode is enabled
-  local output
   local exit_code=0
+  local output=""
+  local start_time=$(date +%s.%N)
   
-  # Show timeout info if enabled
-  if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
-    log_msg INFO "time_limit" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
+  # Start the spinner if in verbose mode
+  if [[ "$RUNNER_VERBOSE" == "true" ]]; then
+    start_spinner "$(get_msg info_running) ${C_CYAN}${cmd}${C_RESET}"
   fi
   
-  # When running in sandbox mode, show a notification and run in sandbox
-  if [[ "$RUNNER_SANDBOX" == "true" && "$(detect_sandbox_tech)" != "" ]]; then
-    local sandbox_tech=$(detect_sandbox_tech)
-    log_msg INFO "sandbox_mode" "${C_CYAN}${sandbox_tech}${C_RESET}"
-    
-    # Apply timeout if set
-    if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
-      # We need to capture output differently when using timeout
-      output=$(run_with_timeout "$RUNNER_TIMEOUT" run_in_sandbox "$cmd" "${args[@]}" 2>&1)
-    else
-      output=$(run_in_sandbox "$cmd" "${args[@]}" 2>&1)
-    fi
-  else
-    # Apply timeout if set
-    if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
-      # Direct call to timeout command for better control
-      if command -v timeout &>/dev/null; then
-        output=$(timeout --kill-after=2 "$RUNNER_TIMEOUT" "$cmd" "${args[@]}" 2>&1)
-        exit_code=$?
-        # Check if the command was terminated due to timeout
-        if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
-          log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
-        fi
-      else
-        log_msg WARN "timeout_not_found"
-        output=$("$cmd" "${args[@]}" 2>&1)
+  # Run the command with timeout if specified
+  if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
+    # Check if timeout command is available
+    if command -v timeout &>/dev/null; then
+      # Use timeout command to limit execution time
+      output=$(timeout --kill-after=2 "$RUNNER_TIMEOUT" "$cmd" "${args[@]}" 2>&1)
+      exit_code=$?
+      
+      # Check if the command timed out (exit code 124)
+      if [[ $exit_code -eq 124 ]]; then
+        log_msg WARN "$(get_msg error_timeout) ${RUNNER_TIMEOUT}s"
       fi
     else
+      # Fallback if timeout command is not available
+      log_msg WARN "timeout command not found, running without timeout limit"
       output=$("$cmd" "${args[@]}" 2>&1)
+      exit_code=$?
     fi
-  fi
-  
-  exit_code=$?
-  
-  # Apply syntax highlighting if possible
-  if [[ -n "$ext" && "$(detect_highlighter)" != "" ]]; then
-    highlight_code "$output" "$ext"
   else
-    echo "$output"
+    # Run without timeout
+    output=$("$cmd" "${args[@]}" 2>&1)
+    exit_code=$?
   fi
   
-  echo -e "${MAGENTA_OLD}└────────────────────────────────────────────────────────────┘${RESET_OLD}"
+  # Stop the spinner if it was started
+  if [[ "$RUNNER_VERBOSE" == "true" ]]; then
+    stop_spinner
+  fi
+  
+  # Calculate execution time
+  local end_time=$(date +%s.%N)
+  local execution_time=$(printf "%.2f" $(echo "$end_time - $start_time" | bc))
+  
+  # Get terminal width
+  local term_width=$(tput cols)
+  local line=$(printf '%*s' "$term_width" | tr ' ' '─')
+  
+  # Display the output in a box
+  echo -e "${C_BLUE}┌${line} PROGRAM OUTPUT ${line}┐${C_RESET}"
+  echo -e "$output"
+  echo -e "${C_BLUE}└${line}${line}${line}┘${C_RESET}"
+  echo
+  
+  # Display the status message
   if [[ $exit_code -eq 0 ]]; then
-    local status_msg=$(get_msg "program_completed_full")
-    echo -e "\n${BLUE_OLD}📊 ${GREEN_OLD}${status_msg}${RESET_OLD}"
-  elif [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
-    local status_msg=$(get_msg "program_timed_out_full")
-    echo -e "\n${BLUE_OLD}📊 ${RED_OLD}${status_msg}${RESET_OLD}"
+    log_msg SUCCESS "$(get_msg success_execution) (${execution_time}s)"
+  elif [[ $exit_code -eq 124 ]]; then
+    log_msg ERROR "$(get_msg error_timeout) ${RUNNER_TIMEOUT}s"
   else
-    local status_msg=$(get_msg "program_exited_with_code_full" "$exit_code")
-    echo -e "\n${BLUE_OLD}📊 ${YELLOW_OLD}${status_msg}${RESET_OLD}"
+    log_msg ERROR "$(get_msg error_execution_failed) (${C_RED}${exit_code}${C_RESET})"
   fi
+  
   return $exit_code
-} 
+}
+
+# ==============================================================================
+# Core Utility Functions
+# ==============================================================================
+
+# Find the most recently modified file with a given extension pattern
+# Usage: find_latest_file <extension_pattern> [directory]
+find_latest_file() {
+  local ext_pattern="$1"
+  local directory="${2:-.}"
+  
+  # Find the most recently modified file matching the pattern
+  find "$directory" -type f -name "$ext_pattern" -not -path "*/\.*" -printf "%T@ %p\n" 2>/dev/null | \
+    sort -rn | head -n 1 | cut -d' ' -f2-
+}
+
+# Find the most recently modified code file
+# Usage: find_latest_code_file [directory]
+find_latest_code_file() {
+  local directory="${1:-.}"
+  local supported_extensions="*.{c,cpp,java,py,js,rb,php,pl,sh,rs,lua,go,ts}"
+  
+  # Find the most recently modified file with a supported extension
+  find_latest_file "$supported_extensions" "$directory"
+}
+
+# Initialize the runner environment
+init_runner() {
+  # Set default values for configuration variables
+  RUNNER_VERBOSE=${RUNNER_VERBOSE:-false}
+  RUNNER_TIMEOUT=${RUNNER_TIMEOUT:-10}
+  RUNNER_MEMORY_LIMIT=${RUNNER_MEMORY_LIMIT:-500}
+  RUNNER_SANDBOX=${RUNNER_SANDBOX:-false}
+  RUNNER_DISABLE_CACHE=${RUNNER_DISABLE_CACHE:-false}
+  RUNNER_LANG=${RUNNER_LANG:-en}
+  RUNNER_ASCII_MODE=${RUNNER_ASCII_MODE:-false}
+  
+  # Validate configuration
+  validate_args
+}
+
+# Initialize the runner environment
+init_runner 

@@ -37,7 +37,7 @@ get_source_hash() {
     cat "$src_file"
     echo "$compiler_path"
     echo "${flags[@]}"
-  } | sha256sum | cut -d' ' -f1 | cut -c1-32  # 只使用前32个字符，避免文件名过长
+  } | sha256sum | cut -d' ' -f1 | cut -c1-32  # Use only the first 32 characters to avoid long filenames
 }
 
 # Check if a cached binary exists and is valid

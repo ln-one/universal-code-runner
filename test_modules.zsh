@@ -1,59 +1,63 @@
 #!/usr/bin/env zsh
+# Test module refactoring success
+# This script tests if each module can be correctly loaded and used
 
-# 测试模块重构是否成功
-# 这个脚本测试各个模块是否可以正确加载并使用
+# Import common module (which should automatically import all other modules)
+source "${0:A:h}/_common.zsh"
 
-# 导入common模块（应该会自动导入所有其他模块）
-source "$(dirname "$0")/_common.zsh"
+# Set up test environment
+RUNNER_VERBOSE=true
 
-echo "=== 测试 UI 模块 ==="
-# 测试log_msg函数
-log_msg STEP "测试消息" "参数1" "参数2"
-log_msg INFO "测试消息" "参数1" "参数2"
-log_msg SUCCESS "测试消息" "参数1" "参数2"
-log_msg WARN "测试消息" "参数1" "参数2"
-log_msg ERROR "测试消息" "参数1" "参数2"
-# 显示debug信息时只有当RUNNER_DEBUG=true时才会显示
-RUNNER_DEBUG=true log_msg DEBUG "测试消息" "参数1" "参数2"
+# Test log_msg function
+echo "Testing log_msg function..."
+log_msg INFO "This is an info message"
+log_msg WARN "This is a warning message"
+log_msg ERROR "This is an error message"
+log_msg SUCCESS "This is a success message"
 
-echo "=== 测试 国际化 模块 ==="
-# 测试get_msg函数
-echo "默认消息: $(get_msg "program_completed")"
-RUNNER_LANGUAGE="zh"
-echo "中文消息: $(get_msg "program_completed")"
-RUNNER_LANGUAGE="en"
-echo "英文消息: $(get_msg "program_completed")"
+# Debug messages are only displayed when RUNNER_DEBUG=true
+echo "Testing debug message (should not appear)..."
+log_msg DEBUG "This is a debug message"
+RUNNER_DEBUG=true
+log_msg DEBUG "This is a debug message (should appear)"
 
-echo "=== 测试 验证 模块 ==="
-# 测试validate_numeric函数
-if validate_numeric 10 "测试参数" 1 100; then
-  echo "数值验证通过"
-else
-  echo "数值验证失败"
-fi
+# Test get_msg function
+echo "Testing get_msg function..."
+echo "Message in English: $(get_msg info_using_file)"
+RUNNER_LANG=zh
+echo "Message in Chinese: $(get_msg info_using_file)"
+RUNNER_LANG=en
 
-if ! validate_numeric 200 "测试参数" 1 100; then
-  echo "超出范围验证通过"
-else
-  echo "超出范围验证失败"
-fi
+# Test validate_numeric function
+echo "Testing validate_numeric function..."
+validate_numeric 5 1 10 "Test parameter"
+echo "Valid numeric: $?"
+validate_numeric 15 1 10 "Test parameter"
+echo "Invalid numeric (too large): $?"
+validate_numeric -5 1 10 "Test parameter"
+echo "Invalid numeric (negative): $?"
+validate_numeric abc 1 10 "Test parameter"
+echo "Invalid numeric (not a number): $?"
 
-# 测试run_with_timeout函数
-echo "测试超时函数 (应该在2秒后终止):"
-run_with_timeout 2 sleep 5
-echo "超时函数执行完毕，退出码: $?"
+# Test run_with_timeout function
+echo "Testing run_with_timeout function..."
+run_with_timeout 2 echo "This should complete within timeout"
+echo "Exit code: $?"
+run_with_timeout 1 sleep 3
+echo "Exit code after timeout: $?"
 
-echo "=== 测试 沙箱 模块 ==="
-# 测试detect_sandbox_tech函数
-echo "检测到的沙箱技术: $(detect_sandbox_tech)"
+# Test detect_sandbox_tech function
+echo "Testing detect_sandbox_tech function..."
+echo "Available sandbox technology: $(detect_sandbox_tech)"
 
-echo "=== 测试 缓存 模块 ==="
-# 测试get_cache_dir函数
-echo "缓存目录: $(get_cache_dir)"
+# Test get_cache_dir function
+echo "Testing get_cache_dir function..."
+cache_dir=$(get_cache_dir)
+echo "Cache directory: $cache_dir"
 
-echo "=== 测试 Common 模块 ==="
-# 测试execute_and_show_output函数
-echo "执行ls命令:"
-execute_and_show_output ls -la
+# Test execute_and_show_output function
+echo "Testing execute_and_show_output function..."
+execute_and_show_output echo "This is a test output"
 
-echo "=== 所有测试完成 ===" 
+echo "All tests completed!"
+exit 0 

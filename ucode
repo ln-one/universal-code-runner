@@ -146,13 +146,13 @@ while [[ $# -gt 0 && "$1" == -* ]]; do
       ;;
     --timeout)
       [[ $# -lt 2 ]] && { log_msg ERROR "missing_timeout_value"; exit 1; }
-      validate_numeric "$2" "Timeout" 0 3600 || exit 1
+      validate_numeric "$2" 1 3600 "Timeout" || exit 1
       RUNNER_TIMEOUT=$2
       shift 2
       ;;
     --memory)
       [[ $# -lt 2 ]] && { log_msg ERROR "missing_memory_value"; exit 1; }
-      validate_numeric "$2" "Memory limit" 0 4096 || exit 1
+      validate_numeric "$2" 50 4096 "Memory limit" || exit 1
       RUNNER_MEMORY_LIMIT=$2
       shift 2
       ;;

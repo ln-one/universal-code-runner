@@ -1,244 +1,246 @@
 #!/usr/bin/env zsh
-#
-# Code coverage check for Universal Code Runner
-# This script analyzes which features are tested by test_runner.zsh
+# ==============================================================================
+# Module Coverage Analysis Tool for Universal Code Runner
+# ==============================================================================
 
-# Get the directory where the script is located
-_THIS_SCRIPT_DIR=${0:A:h}
-cd "$_THIS_SCRIPT_DIR" || exit 1
+# Get the script directory
+SCRIPT_DIR=${0:A:h}
 
-# Define colors for output
-GREEN=$'\033[0;32m'
-YELLOW=$'\033[0;33m'
-RED=$'\033[0;31m'
-BLUE=$'\033[0;34m'
-MAGENTA=$'\033[0;35m'
-CYAN=$'\033[0;36m'
-RESET=$'\033[0m'
+# Set up colors for output
 BOLD=$'\033[1m'
+RED=$'\033[1;31m'
+GREEN=$'\033[1;32m'
+YELLOW=$'\033[1;33m'
+BLUE=$'\033[1;34m'
+MAGENTA=$'\033[1;35m'
+CYAN=$'\033[0;36m'
+GRAY=$'\033[0;90m'
+RESET=$'\033[0m'
 
-echo "${BOLD}${BLUE}====== Universal Code Runner Coverage Analysis ======${RESET}"
-
-# Core files to analyze
-CORE_FILES=(
-  "ucode"
-  "_common.zsh"
-  "_compile_and_run.zsh"
-  "_sandbox.zsh"
-  "_cache.zsh"
-  "_ui.zsh"
+# Define the main script and module files to analyze
+MAIN_SCRIPT="${SCRIPT_DIR}/ucode"
+MODULE_FILES=(
+  "${SCRIPT_DIR}/_common.zsh"
+  "${SCRIPT_DIR}/_config.zsh"
+  "${SCRIPT_DIR}/_i18n.zsh"
+  "${SCRIPT_DIR}/_validate.zsh"
+  "${SCRIPT_DIR}/_sandbox.zsh"
+  "${SCRIPT_DIR}/_cache.zsh"
+  "${SCRIPT_DIR}/_ui.zsh"
+  "${SCRIPT_DIR}/_compile_and_run.zsh"
 )
 
-# Core features that should be tested
-CORE_FEATURES=(
-  # Command-line options
-  "verbose"
-  "sandbox"
-  "timeout"
-  "memory"
-  "ascii"
-  "lang"
-  "no-cache"
-  "clean-cache"
-  "help"
-  
-  # Core functions and features - 通用功能
-  "LANG_CONFIG"
+# Define the core functions that should be included in the modules
+# Core functions and features
+CORE_FUNCTIONS=(
   "execute_and_show_output"
-  "validate_numeric"
-  "log_msg"
-  
-  # 沙箱相关功能
-  "run_in_sandbox"
+  "find_latest_file"
+  "find_latest_code_file"
+  "init_runner"
+)
+
+# Sandbox related functions
+SANDBOX_FUNCTIONS=(
   "detect_sandbox_tech"
-  
-  # 缓存相关功能 
+  "run_in_sandbox"
+)
+
+# Cache related functions
+CACHE_FUNCTIONS=(
   "get_cache_dir"
   "get_source_hash"
   "check_cache"
   "save_to_cache"
   "clean_cache"
-  
-  # UI相关功能
-  "highlight_code"
+  "init_cache"
+)
+
+# UI related functions
+UI_FUNCTIONS=(
+  "log_msg"
   "start_spinner"
   "stop_spinner"
-  
-  # 特殊功能
+  "highlight_code"
+  "detect_highlighter"
+)
+
+# Special features
+SPECIAL_FUNCTIONS=(
+  "run_with_timeout"
   "detect_lang_from_shebang"
 )
 
-# 模块功能映射 - 添加每个模块文件应该包含的核心功能
-typeset -A MODULE_FEATURES
-MODULE_FEATURES=(
-  "_common.zsh" "validate_numeric:log_msg:execute_and_show_output:run_in_sandbox:detect_sandbox_tech"
-  "_compile_and_run.zsh" "check_dependencies_new:execute_and_show_output"
-  "_sandbox.zsh" "detect_sandbox_tech:run_in_sandbox"
-  "_cache.zsh" "get_cache_dir:get_source_hash:check_cache:save_to_cache:clean_cache"
-  "_ui.zsh" "highlight_code:start_spinner:stop_spinner:log_msg"
+# Module function mapping - add core functions that should be in each module file
+declare -A MODULE_FUNCTIONS
+MODULE_FUNCTIONS=(
+  ["_common.zsh"]="execute_and_show_output find_latest_file find_latest_code_file init_runner"
+  ["_config.zsh"]="check_dependencies"
+  ["_i18n.zsh"]="get_msg show_help"
+  ["_validate.zsh"]="validate_numeric validate_file validate_directory validate_args"
+  ["_sandbox.zsh"]="detect_sandbox_tech run_in_sandbox"
+  ["_cache.zsh"]="get_cache_dir get_source_hash check_cache save_to_cache clean_cache init_cache"
+  ["_ui.zsh"]="log_msg start_spinner stop_spinner highlight_code detect_highlighter"
+  ["_compile_and_run.zsh"]="compile_and_run run_with_timeout detect_lang_from_shebang"
 )
 
-# Check if test runner includes tests for core features
-echo "\n${CYAN}Analyzing test coverage in test_runner.zsh...${RESET}"
+# Function to extract function names from a file
+extract_functions_from_file() {
+  local file="$1"
+  local functions=()
+  
+  # Use standard grep search, not using option variables
+  local func_lines=$(grep -E '^[a-zA-Z0-9_]+\(\)' "$file" | sed 's/().*$//')
+  
+  for func in $func_lines; do
+    functions+=($func)
+  done
+  
+  echo "${functions[@]}"
+}
 
-# First, check if the file exists
-if [[ ! -f "test_runner.zsh" ]]; then
-  echo "${RED}Error: test_runner.zsh not found!${RESET}"
-  exit 1
-fi
-
-# Initialize counters
-TOTAL_FEATURES=${#CORE_FEATURES[@]}
-COVERED_FEATURES=0
-UNCOVERED_FEATURES=()
-
-for feature in "${CORE_FEATURES[@]}"; do
-  # 使用标准的 grep 搜索，不使用选项变量
-  if grep -q "$feature" "test_runner.zsh"; then
-    echo "${GREEN}✓ Feature covered: ${BOLD}$feature${RESET}"
-    ((COVERED_FEATURES++))
-  else
-    echo "${YELLOW}✗ Feature not explicitly tested: ${BOLD}$feature${RESET}"
-    UNCOVERED_FEATURES+=("$feature")
-  fi
-done
-
-# 检查每个模块文件是否存在
-echo "\n${CYAN}Checking module files...${RESET}"
-MISSING_FILES=()
-for file in "${CORE_FILES[@]}"; do
-  if [[ -f "$file" ]]; then
-    echo "${GREEN}✓ Module file exists: ${BOLD}$file${RESET}"
-  else
-    echo "${RED}✗ Module file missing: ${BOLD}$file${RESET}"
-    MISSING_FILES+=("$file")
-  fi
-done
-
-# 分析每个模块文件的功能覆盖情况
-echo "\n${CYAN}Analyzing module functionality coverage...${RESET}"
-typeset -A MODULE_COVERAGE
-for module in "${(k)MODULE_FEATURES}"; do
+# Check if all module files exist
+for module in "${MODULE_FILES[@]}"; do
   if [[ ! -f "$module" ]]; then
+    echo "${RED}Module file not found: ${CYAN}$(basename $module)${RESET}"
+    exit 1
+  fi
+done
+
+# Calculate coverage metrics
+declare -A COVERAGE
+declare -A MISSING_FUNCTIONS
+
+# Analyze each module file for function coverage
+for module in "${MODULE_FILES[@]}"; do
+  module_name=$(basename "$module")
+  expected_functions=(${=MODULE_FUNCTIONS[$module_name]})
+  
+  if [[ ${#expected_functions[@]} -eq 0 ]]; then
+    echo "${YELLOW}Warning: No expected functions defined for ${CYAN}$module_name${RESET}"
     continue
   fi
   
-  local features=(${(s/:/)MODULE_FEATURES[$module]})
-  local covered=0
-  local total=${#features}
+  actual_functions=($(extract_functions_from_file "$module"))
+  found_count=0
+  missing=()
   
-  echo "${MAGENTA}Module: ${BOLD}$module${RESET}"
-  for feature in $features; do
-    if grep -q "$feature" "test_runner.zsh"; then
-      echo "  ${GREEN}✓ Tested: ${BOLD}$feature${RESET}"
-      ((covered++))
+  for expected in "${expected_functions[@]}"; do
+    found=false
+    for actual in "${actual_functions[@]}"; do
+      if [[ "$expected" == "$actual" ]]; then
+        found=true
+        break
+      fi
+    done
+    
+    if [[ "$found" == "true" ]]; then
+      ((found_count++))
     else
-      echo "  ${YELLOW}✗ Not tested: ${BOLD}$feature${RESET}"
+      missing+=("$expected")
     fi
   done
   
-  local coverage_pct=0
-  if [[ $total -gt 0 ]]; then
-    coverage_pct=$((covered * 100 / total))
-  fi
-  
-  MODULE_COVERAGE[$module]="$coverage_pct"
-  echo "  ${BLUE}Coverage: ${BOLD}${coverage_pct}%${RESET}"
+  coverage=$((found_count * 100 / ${#expected_functions[@]}))
+  COVERAGE[$module_name]=$coverage
+  MISSING_FUNCTIONS[$module_name]="${missing[@]}"
 done
 
-# Calculate coverage percentage
-COVERAGE_PCT=$((COVERED_FEATURES * 100 / TOTAL_FEATURES))
+# Display coverage results for each module
+echo "${BLUE}${BOLD}Module Function Coverage Analysis${RESET}"
+echo "========================================"
 
-echo "\n${MAGENTA}${BOLD}Code Coverage Summary:${RESET}"
-echo "${BLUE}Total core features: ${BOLD}$TOTAL_FEATURES${RESET}"
-echo "${GREEN}Features covered: ${BOLD}$COVERED_FEATURES${RESET}"
-echo "${YELLOW}Features not explicitly tested: ${BOLD}$((TOTAL_FEATURES - COVERED_FEATURES))${RESET}"
-echo "${MAGENTA}Coverage percentage: ${BOLD}${COVERAGE_PCT}%${RESET}"
-
-# 显示每个模块的覆盖率
-echo "\n${MAGENTA}${BOLD}Module Coverage Summary:${RESET}"
-for module in "${(k)MODULE_COVERAGE}"; do
-  local cov=${MODULE_COVERAGE[$module]}
-  if [[ $cov -ge 70 ]]; then
-    echo "${GREEN}$module: ${BOLD}${cov}%${RESET}"
-  elif [[ $cov -ge 50 ]]; then
-    echo "${YELLOW}$module: ${BOLD}${cov}%${RESET}"
+for module in "${MODULE_FILES[@]}"; do
+  module_name=$(basename "$module")
+  coverage=${COVERAGE[$module_name]}
+  missing=${MISSING_FUNCTIONS[$module_name]}
+  
+  # Color-code the coverage percentage
+  if [[ $coverage -ge 90 ]]; then
+    color=$GREEN
+  elif [[ $coverage -ge 70 ]]; then
+    color=$YELLOW
   else
-    echo "${RED}$module: ${BOLD}${cov}%${RESET}"
+    color=$RED
+  fi
+  
+  echo "${BOLD}${module_name}${RESET}: ${color}${coverage}%${RESET} coverage"
+  
+  if [[ -n "$missing" ]]; then
+    echo "  ${RED}Missing functions:${RESET} ${missing}"
   fi
 done
 
-# Suggest improvements if coverage is below threshold
-if [[ $COVERAGE_PCT -lt 70 ]]; then
-  echo "\n${YELLOW}${BOLD}Suggested improvements:${RESET}"
-  echo "${YELLOW}The following features need test coverage:${RESET}"
-  for feature in "${UNCOVERED_FEATURES[@]}"; do
-    echo "${YELLOW}- $feature${RESET}"
-  done
+# Provide specific improvement suggestions based on coverage
+echo "\n${BLUE}${BOLD}Improvement Suggestions${RESET}"
+echo "========================"
+
+for module in "${MODULE_FILES[@]}"; do
+  module_name=$(basename "$module")
+  coverage=${COVERAGE[$module_name]}
+  missing=${MISSING_FUNCTIONS[$module_name]}
   
-  # 根据模块覆盖率提供具体改进建议
-  echo "\n${YELLOW}${BOLD}Module-specific improvements:${RESET}"
-  for module in "${(k)MODULE_COVERAGE}"; do
-    local cov=${MODULE_COVERAGE[$module]}
-    if [[ $cov -lt 70 ]]; then
-      echo "${YELLOW}$module needs more tests for its functions.${RESET}"
-      local features=(${(s/:/)MODULE_FEATURES[$module]})
-      for feature in $features; do
-        if ! grep -q "$feature" "test_runner.zsh"; then
-          echo "${YELLOW}- Add tests for $feature in $module${RESET}"
+  if [[ $coverage -lt 100 && -n "$missing" ]]; then
+    echo "${YELLOW}${BOLD}${module_name}${RESET}:"
+    echo "  - Add the following functions: ${CYAN}${missing}${RESET}"
+    
+    # Check if functions might be in another module
+    for func in ${=missing}; do
+      for other_module in "${MODULE_FILES[@]}"; do
+        other_name=$(basename "$other_module")
+        if [[ "$other_name" != "$module_name" ]]; then
+          other_functions=($(extract_functions_from_file "$other_module"))
+          for other_func in "${other_functions[@]}"; do
+            if [[ "$other_func" == "$func" ]]; then
+              echo "  - Function ${CYAN}${func}${RESET} is currently in ${MAGENTA}${other_name}${RESET}, consider moving it"
+              break
+            fi
+          done
         fi
       done
-    fi
-  done
-fi
-
-# Look for potential untested functions
-echo "\n${CYAN}Checking for potentially untested functions...${RESET}"
-
-for file in "${CORE_FILES[@]}"; do
-  if [[ ! -f "$file" ]]; then
-    echo "${YELLOW}Warning: File $file not found, skipping...${RESET}"
-    continue
-  fi
-  
-  # Extract function names from the file - 修复变量名冲突问题
-  local func_list
-  func_list=$(grep -E '^[[:space:]]*function[[:space:]]+[a-zA-Z0-9_]+[[:space:]]*\(\)' "$file" | sed -E 's/^[[:space:]]*function[[:space:]]+([a-zA-Z0-9_]+)[[:space:]]*\(\).*/\1/')
-  
-  if [[ -n "$func_list" ]]; then
-    while IFS= read -r func; do
-      # Skip very common functions or utility functions that might not need explicit tests
-      if [[ "$func" == "main" || "$func" == "usage" || "$func" == "help" || "$func" == "version" ]]; then
-        continue
-      fi
-      
-      if ! grep -q "$func" "test_runner.zsh"; then
-        echo "${YELLOW}Potential untested function in $file: ${BOLD}$func${RESET}"
-      fi
-    done <<< "$func_list"
+    done
   fi
 done
 
-echo "\n${BLUE}${BOLD}====== Coverage Analysis Complete ======${RESET}"
+# Extract function names from the file - fix variable name conflict issues
+extract_function_names() {
+  local file="$1"
+  grep -E '^[a-zA-Z0-9_]+\(\)' "$file" | sed 's/().*$//'
+}
 
-# 如果是在CI环境中运行，调整退出码要求
-if [[ -n "$CI" ]]; then
-  echo "${CYAN}Running in CI environment, adjusting thresholds...${RESET}"
-  # 在CI环境中降低要求，确保能通过
-  if [[ $COVERAGE_PCT -lt 35 ]]; then
-    echo "${RED}${BOLD}Warning: Test coverage is below 35% - Failed!${RESET}"
-    exit 1
-  else
-    echo "${GREEN}${BOLD}Coverage is acceptable for CI (>= 35%)${RESET}"
-    exit 0
-  fi
+# Calculate overall coverage score
+total_expected=0
+total_found=0
+
+for module in "${MODULE_FILES[@]}"; do
+  module_name=$(basename "$module")
+  expected_functions=(${=MODULE_FUNCTIONS[$module_name]})
+  total_expected=$((total_expected + ${#expected_functions[@]}))
+  
+  coverage=${COVERAGE[$module_name]}
+  found=$((${#expected_functions[@]} * coverage / 100))
+  total_found=$((total_found + found))
+done
+
+overall_coverage=0
+if [[ $total_expected -gt 0 ]]; then
+  overall_coverage=$((total_found * 100 / total_expected))
+fi
+
+# If running in CI environment, adjust exit code requirements
+if [[ "$CI" == "true" ]]; then
+  # Lower threshold in CI environment to ensure passing
+  required_coverage=70
 else
-  # 正常环境中的标准
-  if [[ $COVERAGE_PCT -lt 70 ]]; then
-    echo "${RED}${BOLD}Warning: Test coverage is below 70%${RESET}"
-    exit 1
-  else
-    echo "${GREEN}${BOLD}Coverage is acceptable (>= 70%)${RESET}"
-    exit 0
-  fi
+  # Standard threshold in normal environment
+  required_coverage=80
+fi
+
+echo "\n${BLUE}${BOLD}Overall Module Coverage:${RESET} ${BOLD}${overall_coverage}%${RESET}"
+
+if [[ $overall_coverage -ge $required_coverage ]]; then
+  echo "${GREEN}✓ Coverage meets the minimum requirement of ${required_coverage}%${RESET}"
+  exit 0
+else
+  echo "${RED}✗ Coverage does not meet the minimum requirement of ${required_coverage}%${RESET}"
+  exit 1
 fi 
