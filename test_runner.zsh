@@ -388,7 +388,7 @@ if command -v gcc &>/dev/null; then
   run_test "Cache creation" "${_MAIN_SCRIPT_DIR}/ucode --verbose cache.c" "Compiling cache.c"
   
   # Test 2: Second run uses cache
-  run_test "Cache utilization" "${_MAIN_SCRIPT_DIR}/ucode --verbose cache.c" "Using cached binary"
+  run_test "Cache utilization" "${_MAIN_SCRIPT_DIR}/ucode --verbose cache.c" "cached binary"
   
   # Test 3: Cache can be disabled
   run_test "Cache disabling" "${_MAIN_SCRIPT_DIR}/ucode --verbose --no-cache cache.c" "Compiling cache.c"
@@ -546,7 +546,7 @@ EOF
   run_test "Save to cache function" "${_MAIN_SCRIPT_DIR}/ucode --verbose cache_complex.c" "Compiling cache_complex.c"
   
   # 再次运行，测试get_source_hash和check_cache
-  run_test "Get source hash function" "${_MAIN_SCRIPT_DIR}/ucode --verbose cache_complex.c" "Using cached binary"
+  run_test "Get source hash function" "${_MAIN_SCRIPT_DIR}/ucode --verbose cache_complex.c" "cached binary"
   
   # 模拟修改文件，测试哈希变化
   echo "// Modified file" >> cache_complex.c
