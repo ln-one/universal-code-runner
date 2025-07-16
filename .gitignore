@@ -1,6 +1,12 @@
 # Test runner artifacts
 test_workspace/
 
+# Kiro steering files
+.kiro/
+
+# Test files
+test.c
+
 # macOS specific
 .DS_Store
 
