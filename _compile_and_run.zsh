@@ -49,28 +49,28 @@ if [[ "$TYPE" == "direct" ]]; then
         # Get program output header in the current language
         local program_output=$(get_msg "program_output")
         
-        echo -e "${MAGENTA_OLD}┌────────────────────── ${WHITE_OLD}${program_output}${MAGENTA_OLD} ──────────────────────┐${RESET_OLD}"
+        echo -e "${C_MAGENTA}┌────────────────────── ${C_WHITE}${program_output}${C_MAGENTA} ──────────────────────┐${C_RESET}"
         
         # Run with timeout
         timeout --kill-after=2 "$RUNNER_TIMEOUT" "$RUNNER" "$SRC_FILE" "${PROG_ARGS[@]}"
         local exit_code=$?
         
-        echo -e "${MAGENTA_OLD}└────────────────────────────────────────────────────────────┘${RESET_OLD}"
+        echo -e "${C_MAGENTA}└────────────────────────────────────────────────────────────┘${C_RESET}"
         
         # Check if timeout occurred
         if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
             log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
             local status_msg=$(get_msg "program_timed_out_full")
             echo -e "
-${BLUE_OLD}📊 ${RED_OLD}${status_msg}${RESET_OLD}"
+${C_BLUE}📊 ${C_RED}${status_msg}${C_RESET}"
         elif [[ $exit_code -eq 0 ]]; then
             local status_msg=$(get_msg "program_completed_full")
             echo -e "
-${BLUE_OLD}📊 ${GREEN_OLD}${status_msg}${RESET_OLD}"
+${C_BLUE}📊 ${C_GREEN}${status_msg}${C_RESET}"
         else
             local status_msg=$(get_msg "program_exited_with_code_full" "$exit_code")
             echo -e "
-${BLUE_OLD}📊 ${YELLOW_OLD}${status_msg}${RESET_OLD}"
+${C_BLUE}📊 ${C_YELLOW}${status_msg}${C_RESET}"
         fi
     else
         # Normal execution without timeout

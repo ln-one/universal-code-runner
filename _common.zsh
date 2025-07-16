@@ -226,24 +226,7 @@ run_in_sandbox() {
   return $exit_code
 }
 
-# ==============================================================================
-# Colors and Styling (tput for compatibility)
-# ==============================================================================
-# Using raw ANSI codes for better compatibility and more vibrant colors.
-if [[ -t 1 ]]; then
-    C_RESET=$'\033[0m'
-    C_RED=$'\033[1;31m'
-    C_GREEN=$'\033[1;32m'
-    C_YELLOW=$'\033[1;33m'
-    C_BLUE=$'\033[1;34m'
-    C_MAGENTA=$'\033[1;35m'
-    C_CYAN=$'\033[1;36m'
-    C_WHITE=$'\033[1;97m'
-    C_BOLD=$'\033[1m'
-    C_DIM=$'\033[2m'
-else
-    C_RESET="" C_RED="" C_GREEN="" C_YELLOW="" C_BLUE="" C_MAGENTA="" C_CYAN="" C_WHITE="" C_BOLD="" C_DIM=""
-fi
+# Note: Color definitions are now in _ui.zsh to avoid duplication
 
 # ==============================================================================
 # Standardized UI / Logging Functions
@@ -545,17 +528,7 @@ debug_lang() {
 # This section contains the original helper functions and variables
 # to ensure the core logic of the scripts remains unchanged as requested.
 
-# Original Colors (for backwards compatibility if needed by old logic)
-BOLD_OLD=$'\033[1m'
-RED_OLD=$'\033[1;31m'
-GREEN_OLD=$'\033[1;32m'
-YELLOW_OLD=$'\033[1;33m'
-BLUE_OLD=$'\033[1;34m'
-MAGENTA_OLD=$'\033[1;35m'
-CYAN_OLD=$'\033[0;36m'
-GRAY_OLD=$'\033[0;90m'
-WHITE_OLD=$'\033[1;97m'
-RESET_OLD=$'\033[0m'
+# Note: Old color definitions removed - now using unified colors from _ui.zsh
 
 typeset -gA LANG_CONFIG
 LANG_CONFIG=(
@@ -576,8 +549,8 @@ LANG_CONFIG=(
 check_dependencies() {
   for dep in "$@"; do
     if ! command -v "$dep" &> /dev/null; then
-      echo -e "${RED_OLD}❌ Error: Dependency not found: ${CYAN_OLD}${dep}${RESET_OLD}"
-      echo -e "${YELLOW_OLD}Please install ${CYAN_OLD}${dep}${YELLOW_OLD} and try again.${RESET_OLD}"
+      echo -e "${C_RED}❌ Error: Dependency not found: ${C_CYAN}${dep}${C_RESET}"
+      echo -e "${C_YELLOW}Please install ${C_CYAN}${dep}${C_YELLOW} and try again.${C_RESET}"
       exit 1
     fi
   done
@@ -623,7 +596,7 @@ execute_and_show_output() {
   # Get program output header in the current language
   local program_output=$(get_msg "program_output")
   
-  echo -e "${MAGENTA_OLD}┌────────────────────── ${WHITE_OLD}${program_output}${MAGENTA_OLD} ──────────────────────┐${RESET_OLD}"
+  echo -e "${C_MAGENTA}┌────────────────────── ${C_WHITE}${program_output}${C_MAGENTA} ──────────────────────┐${C_RESET}"
   
   # Capture program output - use run_in_sandbox if sandbox mode is enabled
   local output
@@ -675,16 +648,16 @@ execute_and_show_output() {
     echo "$output"
   fi
   
-  echo -e "${MAGENTA_OLD}└────────────────────────────────────────────────────────────┘${RESET_OLD}"
+  echo -e "${C_MAGENTA}└────────────────────────────────────────────────────────────┘${C_RESET}"
   if [[ $exit_code -eq 0 ]]; then
     local status_msg=$(get_msg "program_completed_full")
-    echo -e "\n${BLUE_OLD}📊 ${GREEN_OLD}${status_msg}${RESET_OLD}"
+    echo -e "\n${C_BLUE}📊 ${C_GREEN}${status_msg}${C_RESET}"
   elif [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
     local status_msg=$(get_msg "program_timed_out_full")
-    echo -e "\n${BLUE_OLD}📊 ${RED_OLD}${status_msg}${RESET_OLD}"
+    echo -e "\n${C_BLUE}📊 ${C_RED}${status_msg}${C_RESET}"
   else
     local status_msg=$(get_msg "program_exited_with_code_full" "$exit_code")
-    echo -e "\n${BLUE_OLD}📊 ${YELLOW_OLD}${status_msg}${RESET_OLD}"
+    echo -e "\n${C_BLUE}📊 ${C_YELLOW}${status_msg}${C_RESET}"
   fi
   return $exit_code
 }
