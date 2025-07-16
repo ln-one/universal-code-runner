@@ -8,76 +8,76 @@ source "${_THIS_SCRIPT_DIR}/_common.zsh"
 function show_help_en() {
     local supported_langs_str
     for ext in ${(k)LANG_CONFIG}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
-    cat <<'EOF'
+    cat <<-EOF
 
-🚀 Universal Code Runner - A smart compile-and-run utility.
+${C_BOLD}🚀 Universal Code Runner - A smart compile-and-run utility.${C_RESET}
 
 This script automatically handles compiling and running code files,
 letting you focus on writing code instead of build commands.
 
-▋USAGE
-    ucode [options] [file_to_run] [program_args...]
+${C_BOLD}${C_BLUE}▋USAGE${C_RESET}
+    ${C_BOLD}ucode${C_RESET} [${C_YELLOW}options${C_RESET}] [${C_GREEN}file_to_run${C_RESET}] [${C_CYAN}program_args...${C_RESET}]
 
-▋MODES OF OPERATION
-    1. Automatic Mode (No file provided)
+${C_BOLD}${C_BLUE}▋MODES OF OPERATION${C_RESET}
+    1. ${C_BOLD}Automatic Mode${C_RESET} (No file provided)
        Finds the most recently modified source file and executes it.
-    2. File Mode (File path provided)
+    2. ${C_BOLD}File Mode${C_RESET} (File path provided)
        Directly compiles and runs the specified file.
-       You can omit the file extension; e.g., 'ucode hello' will find 'hello.cpp'.
+       You can omit the file extension; e.g., `ucode hello` will find `hello.cpp`.
 
-▋OPTIONS
-    -v, --verbose   Enable verbose mode for detailed step-by-step output.
-    --sandbox      Run code in a restricted sandbox environment for security.
+${C_BOLD}${C_BLUE}▋OPTIONS${C_RESET}
+    ${C_YELLOW}-v, --verbose${C_RESET}   Enable verbose mode for detailed step-by-step output.
+    ${C_YELLOW}--sandbox${C_RESET}      Run code in a restricted sandbox environment for security.
                       Limits network access, file system operations, and system resources.
-    --timeout <sec> Set maximum execution time in seconds (0 = no limit).
-    --memory <MB>  Set maximum memory usage in megabytes (0 = no limit).
-    --ascii        Use ASCII characters for icons for compatibility.
-    -l, --lang [en|zh] Force the language to English or Chinese for all messages and output.
-    --no-cache     Disable compilation result caching.
-    --clean-cache  Clean the compilation cache.
-    -h, --help      Show this help message and exit.
+    ${C_YELLOW}--timeout <sec>${C_RESET} Set maximum execution time in seconds (0 = no limit).
+    ${C_YELLOW}--memory <MB>${C_RESET}  Set maximum memory usage in megabytes (0 = no limit).
+    ${C_YELLOW}--ascii${C_RESET}        Use ASCII characters for icons for compatibility.
+    ${C_YELLOW}-l, --lang [en|zh]${C_RESET} Force the language to English or Chinese for all messages and output.
+    ${C_YELLOW}--no-cache${C_RESET}     Disable compilation result caching.
+    ${C_YELLOW}--clean-cache${C_RESET}  Clean the compilation cache.
+    ${C_YELLOW}-h, --help${C_RESET}      Show this help message and exit.
 
-▋SUPPORTED LANGUAGES
+${C_BOLD}${C_BLUE}▋SUPPORTED LANGUAGES${C_RESET}
+    ${supported_langs_str}
 EOF
-    echo "    ${supported_langs_str}"
 }
 
 # Displays a detailed help message in Chinese.
 function show_help_zh() {
     local supported_langs_str
     for ext in ${(k)LANG_CONFIG}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
-    cat <<'EOF'
+    cat <<-EOF
 
-🚀 Universal Code Runner - 智能的编译与运行工具.
+${C_BOLD}🚀 Universal Code Runner - 智能的编译与运行工具.${C_RESET}
 
 本脚本可自动处理代码的编译和运行，
 让您专注于代码本身，而非繁琐的构建命令。
 
-▋ 用法
-    ucode [选项] [要运行的文件] [程序参数...]
+${C_BOLD}${C_BLUE}▋ 用法${C_RESET}
+    ${C_BOLD}ucode${C_RESET} [${C_YELLOW}选项${C_RESET}] [${C_GREEN}要运行的文件${C_RESET}] [${C_CYAN}程序参数...${C_RESET}]
 
-▋ 运行模式
-    1. 自动模式 (不提供文件名)
+${C_BOLD}${C_BLUE}▋ 运行模式${C_RESET}
+    1. ${C_BOLD}自动模式${C_RESET} (不提供文件名)
        自动寻找当前目录下最新修改的源文件并执行。
-    2. 文件模式 (提供文件路径)
+    2. ${C_BOLD}文件模式${C_RESET} (提供文件路径)
        直接编译并运行您指定的文件。
-       您可以省略文件扩展名，例如 'ucode hello' 会自动查找 'hello.cpp'。
+       您可以省略文件扩展名，例如 `ucode hello` 会自动查找 `hello.cpp`。
 
-▋ 选项
-    -v, --verbose   启用详细模式，显示详细的编译和执行步骤。
-    --sandbox      在受限安全环境中运行代码，提供沙箱隔离。
+${C_BOLD}${C_BLUE}▋ 选项${C_RESET}
+    ${C_YELLOW}-v, --verbose${C_RESET}   启用详细模式，显示详细的编译和执行步骤。
+    ${C_YELLOW}--sandbox${C_RESET}      在受限安全环境中运行代码，提供沙箱隔离。
                       限制网络访问、文件系统操作和系统资源使用。
-    --timeout <秒> 设置最大执行时间，单位为秒（0 = 无限制）。
-    --memory <MB>  设置最大内存使用量，单位为MB（0 = 无限制）。
-    --ascii        使用 ASCII 字符作为图标，以兼容旧版终端。
-    -l, --lang [en|zh] 强制使用英文或中文显示所有消息和输出。
-    --no-cache     禁用编译结果缓存。
-    --clean-cache  清理编译结果缓存。
-    -h, --help      显示此帮助信息并退出。
+    ${C_YELLOW}--timeout <秒>${C_RESET} 设置最大执行时间，单位为秒（0 = 无限制）。
+    ${C_YELLOW}--memory <MB>${C_RESET}  设置最大内存使用量，单位为MB（0 = 无限制）。
+    ${C_YELLOW}--ascii${C_RESET}        使用 ASCII 字符作为图标，以兼容旧版终端。
+    ${C_YELLOW}-l, --lang [en|zh]${C_RESET} 强制使用英文或中文显示所有消息和输出。
+    ${C_YELLOW}--no-cache${C_RESET}     禁用编译结果缓存。
+    ${C_YELLOW}--clean-cache${C_RESET}  清理编译结果缓存。
+    ${C_YELLOW}-h, --help${C_RESET}      显示此帮助信息并退出。
 
-▋ 支持的语言
+${C_BOLD}${C_BLUE}▋ 支持的语言${C_RESET}
+    ${supported_langs_str}
 EOF
-    echo "    ${supported_langs_str}"
 }
 
 # Determines which help message to show based on environment or flags.
@@ -146,13 +146,13 @@ while [[ $# -gt 0 && "$1" == -* ]]; do
       ;;
     --timeout)
       [[ $# -lt 2 ]] && { log_msg ERROR "missing_timeout_value"; exit 1; }
-      validate_numeric "$2" 1 3600 "Timeout" || exit 1
+      validate_numeric "$2" "Timeout" 0 3600 || exit 1
       RUNNER_TIMEOUT=$2
       shift 2
       ;;
     --memory)
       [[ $# -lt 2 ]] && { log_msg ERROR "missing_memory_value"; exit 1; }
-      validate_numeric "$2" 50 4096 "Memory limit" || exit 1
+      validate_numeric "$2" "Memory limit" 0 4096 || exit 1
       RUNNER_MEMORY_LIMIT=$2
       shift 2
       ;;
@@ -258,6 +258,34 @@ if [[ ${#PROG_ARGS[@]} -gt 0 ]]; then
   done
 fi
 
+# --- Shebang Detection ---
+# Tries to determine the language from the shebang line (e.g., #!/usr/bin/env python)
+# @param: $1 - The absolute path to the file to check.
+# @return: The language extension (e.g., "py", "sh") if found, otherwise empty string.
+function detect_lang_from_shebang() {
+    local file_path="$1"
+    local shebang_line
+    # Ensure the file exists and is readable before trying to read from it.
+    if [[ -r "$file_path" ]]; then
+        shebang_line=$(head -n 1 "$file_path")
+        # Check if the line starts with #!
+        if [[ "$shebang_line" == "#!"* ]]; then
+            # Use a case statement for clarity and efficiency
+            case "$shebang_line" in
+                *python*) echo "py"; return ;;
+                *node*)   echo "js"; return ;;
+                *bash*)   echo "sh"; return ;;
+                *zsh*)    echo "sh"; return ;;
+                *sh*)     echo "sh"; return ;;
+                *perl*)   echo "pl"; return ;;
+                *ruby*)   echo "rb"; return ;;
+            esac
+        fi
+    fi
+    # Return empty if no match or file not readable
+    echo ""
+}
+
 # --- File Discovery (if in search mode) ---
 if [[ "$SEARCH_MODE" == "true" ]]; then
   log_msg STEP "searching_file"
@@ -320,31 +348,24 @@ log_msg STEP "preparing_to_execute" "${C_CYAN}$ABSOLUTE_FILE_PATH${C_RESET}"
 log_msg INFO "file_type_detected" "${C_WHITE}.$EXT${C_RESET}"
 
 if [[ -n "${LANG_CONFIG[$EXT]}" ]]; then
-  # If timeout is enabled, use run_with_timeout function
-  if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
+  # If timeout is enabled and available, use it directly
+  if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]] && command -v timeout &>/dev/null; then
     log_msg INFO "time_limit" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
     
-    # Use run_with_timeout function to limit execution time
-    if command -v timeout &>/dev/null; then
-      # Use the timeout command directly
-      timeout --kill-after=2 "$RUNNER_TIMEOUT" zsh -c "source \"${_THIS_SCRIPT_DIR}/_common.zsh\"; compile_and_run \"$ABSOLUTE_FILE_PATH\" \"$EXT\" $(printf "%q " "${PROG_ARGS[@]}")"
-      exit_code=$?
-      
-      # Check if timeout occurred
-      if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
-        log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
-        exit $exit_code
-      fi
-      
+    # Use timeout command to limit execution time
+    timeout --kill-after=2 "$RUNNER_TIMEOUT" "${_THIS_SCRIPT_DIR}/_compile_and_run.zsh" "$ABSOLUTE_FILE_PATH" "${PROG_ARGS[@]}"
+    exit_code=$?
+    
+    # Check if timeout occurred
+    if [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
+      log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
       exit $exit_code
-    else
-      # Fallback if timeout command is not available
-      log_msg WARN "timeout command not found, running without timeout limit"
-      compile_and_run "$ABSOLUTE_FILE_PATH" "$EXT" "${PROG_ARGS[@]}"
     fi
+    
+    exit $exit_code
   else
     # Normal execution without timeout
-    compile_and_run "$ABSOLUTE_FILE_PATH" "$EXT" "${PROG_ARGS[@]}"
+    "${_THIS_SCRIPT_DIR}/_compile_and_run.zsh" "$ABSOLUTE_FILE_PATH" "$EXT" "${PROG_ARGS[@]}"
   fi
 else
   log_msg ERROR "unsupported_file_type" "${C_WHITE}.$EXT${C_RESET}"

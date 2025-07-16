@@ -34,9 +34,9 @@ If you'd like to contribute code, please follow these steps:
    - Make sure your code follows the project style.
    - Add comments where necessary.
 5. **Run the test suite** to ensure everything works correctly:
-   ```bash
-   ./test_runner.zsh
-   ```
+    ```bash
+    ./test_runner.zsh
+    ```
 6. **Commit your changes** with a clear and descriptive commit message.
    - Use present tense ("Add feature" not "Added feature")
    - Reference issues or pull requests when applicable (e.g., "Fix #123: ...")
