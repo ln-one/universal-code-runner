@@ -13,6 +13,7 @@ source "${SCRIPT_DIR}/_validate.zsh"
 source "${SCRIPT_DIR}/_config.zsh"
 source "${SCRIPT_DIR}/_cache.zsh"
 source "${SCRIPT_DIR}/_sandbox.zsh"
+source "${SCRIPT_DIR}/_compile_and_run.zsh"
 
 # ==============================================================================
 # Core Execution Function

@@ -258,34 +258,6 @@ if [[ ${#PROG_ARGS[@]} -gt 0 ]]; then
   done
 fi
 
-# --- Shebang Detection ---
-# Tries to determine the language from the shebang line (e.g., #!/usr/bin/env python)
-# @param: $1 - The absolute path to the file to check.
-# @return: The language extension (e.g., "py", "sh") if found, otherwise empty string.
-function detect_lang_from_shebang() {
-    local file_path="$1"
-    local shebang_line
-    # Ensure the file exists and is readable before trying to read from it.
-    if [[ -r "$file_path" ]]; then
-        shebang_line=$(head -n 1 "$file_path")
-        # Check if the line starts with #!
-        if [[ "$shebang_line" == "#!"* ]]; then
-            # Use a case statement for clarity and efficiency
-            case "$shebang_line" in
-                *python*) echo "py"; return ;;
-                *node*)   echo "js"; return ;;
-                *bash*)   echo "sh"; return ;;
-                *zsh*)    echo "sh"; return ;;
-                *sh*)     echo "sh"; return ;;
-                *perl*)   echo "pl"; return ;;
-                *ruby*)   echo "rb"; return ;;
-            esac
-        fi
-    fi
-    # Return empty if no match or file not readable
-    echo ""
-}
-
 # --- File Discovery (if in search mode) ---
 if [[ "$SEARCH_MODE" == "true" ]]; then
   log_msg STEP "searching_file"
@@ -353,7 +325,7 @@ if [[ -n "${LANG_CONFIG[$EXT]}" ]]; then
     log_msg INFO "time_limit" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
     
     # Use timeout command to limit execution time
-    timeout --kill-after=2 "$RUNNER_TIMEOUT" "${_THIS_SCRIPT_DIR}/_compile_and_run.zsh" "$ABSOLUTE_FILE_PATH" "${PROG_ARGS[@]}"
+    run_with_timeout "$RUNNER_TIMEOUT" compile_and_run "$ABSOLUTE_FILE_PATH" "$EXT" "${PROG_ARGS[@]}"
     exit_code=$?
     
     # Check if timeout occurred
@@ -365,7 +337,7 @@ if [[ -n "${LANG_CONFIG[$EXT]}" ]]; then
     exit $exit_code
   else
     # Normal execution without timeout
-    "${_THIS_SCRIPT_DIR}/_compile_and_run.zsh" "$ABSOLUTE_FILE_PATH" "$EXT" "${PROG_ARGS[@]}"
+    compile_and_run "$ABSOLUTE_FILE_PATH" "$EXT" "${PROG_ARGS[@]}"
   fi
 else
   log_msg ERROR "unsupported_file_type" "${C_WHITE}.$EXT${C_RESET}"
