@@ -3,7 +3,7 @@
 # UI and Logging Functions for the Universal Code Runner
 # ==============================================================================
 
-# 获取当前脚本目录
+# Get the current script directory
 _THIS_SCRIPT_DIR=${0:A:h}
 
 # ==============================================================================
@@ -33,8 +33,8 @@ fi
 # Usage: start_spinner <file_name>
 start_spinner() {
   local file_name="$1"
-  # 注意：这里依赖于 _common.zsh 中的 get_msg 函数
-  # 在 _common.zsh 中已经 source 了 _ui.zsh，所以 get_msg 函数在调用 start_spinner 时已经可用
+  # Note: This relies on the get_msg function from _common.zsh
+  # The get_msg function is already sourced in _ui.zsh, so it's available when start_spinner is called.
   local msg=$(get_msg "compiling_file" "$file_name")
   
   # Set the spin characters according to terminal support
@@ -194,7 +194,7 @@ log_msg() {
     esac
 
     # Get the message in the current language
-    # 注意：这里依赖于 _common.zsh 中的 get_msg 函数
+    # Note: This relies on the get_msg function from _common.zsh
     local msg=$(get_msg "$msg_key" "$@")
 
     # If a message style is defined, we must ensure it persists even if the

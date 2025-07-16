@@ -3,7 +3,7 @@
 # Compilation Cache Functions for the Universal Code Runner
 # ==============================================================================
 
-# 获取当前脚本目录
+# Get the current script directory
 _THIS_SCRIPT_DIR=${0:A:h}
 
 # ==============================================================================
@@ -18,8 +18,8 @@ get_cache_dir() {
   # Create the cache directory if it doesn't exist
   if [[ ! -d "$cache_dir" ]]; then
     mkdir -p "$cache_dir"
-    # 注意：这里依赖于 _ui.zsh 中的 log_msg 函数
-    # 在 _common.zsh 中已经 source 了 _ui.zsh 和 _cache.zsh，所以函数调用顺序已经正确
+    # Note: This depends on the log_msg function in _ui.zsh
+    # _common.zsh already sources _ui.zsh and _cache.zsh, so the function call order is correct
     log_msg DEBUG "Created cache directory: ${C_CYAN}${cache_dir}${C_RESET}"
   fi
   
@@ -42,7 +42,7 @@ get_source_hash() {
     cat "$src_file"
     echo "$compiler_path"
     echo "${flags[@]}"
-  } | sha256sum | cut -d' ' -f1 | cut -c1-32  # 只使用前32个字符，避免文件名过长
+  } | sha256sum | cut -d' ' -f1 | cut -c1-32  # Only use the first 32 characters to avoid long filenames
 }
 
 # Check if a cached binary exists and is valid
@@ -139,6 +139,6 @@ init_cache() {
   fi
 }
 
-# 不要在这里调用 init_cache，而是在 _common.zsh 中调用
-# 这样可以避免在 _common.zsh 中 source _cache.zsh 时重复初始化
+# Do not call init_cache here, call it in _common.zsh
+# This prevents duplicate initialization when _common.zsh sources _cache.zsh
 # init_cache

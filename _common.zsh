@@ -3,13 +3,13 @@
 # Common configuration and functions for the Universal Code Runner scripts.
 # ==============================================================================
 
-# 获取当前脚本目录
+# Get the directory of the current script
 _THIS_SCRIPT_DIR=${0:A:h}
 
-# 加载专用模块
-source "${_THIS_SCRIPT_DIR}/_ui.zsh"      # UI 和日志函数
-source "${_THIS_SCRIPT_DIR}/_cache.zsh"    # 缓存函数
-source "${_THIS_SCRIPT_DIR}/_sandbox.zsh"  # 沙箱函数
+# Load dedicated modules
+source "${_THIS_SCRIPT_DIR}/_ui.zsh"      # UI and logging functions
+source "${_THIS_SCRIPT_DIR}/_cache.zsh"    # Cache functions
+source "${_THIS_SCRIPT_DIR}/_sandbox.zsh"  # Sandbox functions
 
 # ==============================================================================
 # Input Validation Functions
@@ -768,5 +768,5 @@ execute_and_show_output() {
   return $exit_code
 }
 
-# 初始化缓存系统
+# Initialize cache system
 init_cache 
