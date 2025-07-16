@@ -8,76 +8,76 @@ source "${_THIS_SCRIPT_DIR}/_common.zsh"
 function show_help_en() {
     local supported_langs_str
     for ext in ${(k)LANG_CONFIG}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
-    cat <<-EOF
+    cat <<'EOF'
 
-${C_BOLD}🚀 Universal Code Runner - A smart compile-and-run utility.${C_RESET}
+🚀 Universal Code Runner - A smart compile-and-run utility.
 
 This script automatically handles compiling and running code files,
 letting you focus on writing code instead of build commands.
 
-${C_BOLD}${C_BLUE}▋USAGE${C_RESET}
-    ${C_BOLD}ucode${C_RESET} [${C_YELLOW}options${C_RESET}] [${C_GREEN}file_to_run${C_RESET}] [${C_CYAN}program_args...${C_RESET}]
+▋USAGE
+    ucode [options] [file_to_run] [program_args...]
 
-${C_BOLD}${C_BLUE}▋MODES OF OPERATION${C_RESET}
-    1. ${C_BOLD}Automatic Mode${C_RESET} (No file provided)
+▋MODES OF OPERATION
+    1. Automatic Mode (No file provided)
        Finds the most recently modified source file and executes it.
-    2. ${C_BOLD}File Mode${C_RESET} (File path provided)
+    2. File Mode (File path provided)
        Directly compiles and runs the specified file.
-       You can omit the file extension; e.g., `ucode hello` will find `hello.cpp`.
+       You can omit the file extension; e.g., 'ucode hello' will find 'hello.cpp'.
 
-${C_BOLD}${C_BLUE}▋OPTIONS${C_RESET}
-    ${C_YELLOW}-v, --verbose${C_RESET}   Enable verbose mode for detailed step-by-step output.
-    ${C_YELLOW}--sandbox${C_RESET}      Run code in a restricted sandbox environment for security.
+▋OPTIONS
+    -v, --verbose   Enable verbose mode for detailed step-by-step output.
+    --sandbox      Run code in a restricted sandbox environment for security.
                       Limits network access, file system operations, and system resources.
-    ${C_YELLOW}--timeout <sec>${C_RESET} Set maximum execution time in seconds (0 = no limit).
-    ${C_YELLOW}--memory <MB>${C_RESET}  Set maximum memory usage in megabytes (0 = no limit).
-    ${C_YELLOW}--ascii${C_RESET}        Use ASCII characters for icons for compatibility.
-    ${C_YELLOW}-l, --lang [en|zh]${C_RESET} Force the language to English or Chinese for all messages and output.
-    ${C_YELLOW}--no-cache${C_RESET}     Disable compilation result caching.
-    ${C_YELLOW}--clean-cache${C_RESET}  Clean the compilation cache.
-    ${C_YELLOW}-h, --help${C_RESET}      Show this help message and exit.
+    --timeout <sec> Set maximum execution time in seconds (0 = no limit).
+    --memory <MB>  Set maximum memory usage in megabytes (0 = no limit).
+    --ascii        Use ASCII characters for icons for compatibility.
+    -l, --lang [en|zh] Force the language to English or Chinese for all messages and output.
+    --no-cache     Disable compilation result caching.
+    --clean-cache  Clean the compilation cache.
+    -h, --help      Show this help message and exit.
 
-${C_BOLD}${C_BLUE}▋SUPPORTED LANGUAGES${C_RESET}
-    ${supported_langs_str}
+▋SUPPORTED LANGUAGES
 EOF
+    echo "    ${supported_langs_str}"
 }
 
 # Displays a detailed help message in Chinese.
 function show_help_zh() {
     local supported_langs_str
     for ext in ${(k)LANG_CONFIG}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
-    cat <<-EOF
+    cat <<'EOF'
 
-${C_BOLD}🚀 Universal Code Runner - 智能的编译与运行工具.${C_RESET}
+🚀 Universal Code Runner - 智能的编译与运行工具.
 
 本脚本可自动处理代码的编译和运行，
 让您专注于代码本身，而非繁琐的构建命令。
 
-${C_BOLD}${C_BLUE}▋ 用法${C_RESET}
-    ${C_BOLD}ucode${C_RESET} [${C_YELLOW}选项${C_RESET}] [${C_GREEN}要运行的文件${C_RESET}] [${C_CYAN}程序参数...${C_RESET}]
+▋ 用法
+    ucode [选项] [要运行的文件] [程序参数...]
 
-${C_BOLD}${C_BLUE}▋ 运行模式${C_RESET}
-    1. ${C_BOLD}自动模式${C_RESET} (不提供文件名)
+▋ 运行模式
+    1. 自动模式 (不提供文件名)
        自动寻找当前目录下最新修改的源文件并执行。
-    2. ${C_BOLD}文件模式${C_RESET} (提供文件路径)
+    2. 文件模式 (提供文件路径)
        直接编译并运行您指定的文件。
-       您可以省略文件扩展名，例如 `ucode hello` 会自动查找 `hello.cpp`。
+       您可以省略文件扩展名，例如 'ucode hello' 会自动查找 'hello.cpp'。
 
-${C_BOLD}${C_BLUE}▋ 选项${C_RESET}
-    ${C_YELLOW}-v, --verbose${C_RESET}   启用详细模式，显示详细的编译和执行步骤。
-    ${C_YELLOW}--sandbox${C_RESET}      在受限安全环境中运行代码，提供沙箱隔离。
+▋ 选项
+    -v, --verbose   启用详细模式，显示详细的编译和执行步骤。
+    --sandbox      在受限安全环境中运行代码，提供沙箱隔离。
                       限制网络访问、文件系统操作和系统资源使用。
-    ${C_YELLOW}--timeout <秒>${C_RESET} 设置最大执行时间，单位为秒（0 = 无限制）。
-    ${C_YELLOW}--memory <MB>${C_RESET}  设置最大内存使用量，单位为MB（0 = 无限制）。
-    ${C_YELLOW}--ascii${C_RESET}        使用 ASCII 字符作为图标，以兼容旧版终端。
-    ${C_YELLOW}-l, --lang [en|zh]${C_RESET} 强制使用英文或中文显示所有消息和输出。
-    ${C_YELLOW}--no-cache${C_RESET}     禁用编译结果缓存。
-    ${C_YELLOW}--clean-cache${C_RESET}  清理编译结果缓存。
-    ${C_YELLOW}-h, --help${C_RESET}      显示此帮助信息并退出。
+    --timeout <秒> 设置最大执行时间，单位为秒（0 = 无限制）。
+    --memory <MB>  设置最大内存使用量，单位为MB（0 = 无限制）。
+    --ascii        使用 ASCII 字符作为图标，以兼容旧版终端。
+    -l, --lang [en|zh] 强制使用英文或中文显示所有消息和输出。
+    --no-cache     禁用编译结果缓存。
+    --clean-cache  清理编译结果缓存。
+    -h, --help      显示此帮助信息并退出。
 
-${C_BOLD}${C_BLUE}▋ 支持的语言${C_RESET}
-    ${supported_langs_str}
+▋ 支持的语言
 EOF
+    echo "    ${supported_langs_str}"
 }
 
 # Determines which help message to show based on environment or flags.
