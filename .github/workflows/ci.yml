@@ -58,38 +58,6 @@ jobs:
           export CI=true
           ./coverage.zsh
 
-  # 额外测试 - Ubuntu 20.04 LTS
-  test-ubuntu-20-04:
-    name: Test on Ubuntu 20.04
-    runs-on: ubuntu-20.04
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            zsh \
-            gcc \
-            g++ \
-            openjdk-11-jdk \
-            rustc \
-            nodejs \
-            npm \
-            php \
-            ruby \
-            perl \
-            lua5.3 \
-            firejail
-
-      - name: Make scripts executable
-        run: chmod +x ./*.zsh ./_*.zsh
-
-      - name: Run test suite
-        run: ./test_runner.zsh || echo "Some tests were skipped due to missing dependencies, but that's okay"
-
   # macOS 测试 - 最新版
   test-macos:
     name: Test on macOS
@@ -208,7 +176,7 @@ jobs:
   # 生成测试报告
   generate-report:
     name: Generate Test Report
-    needs: [test-ubuntu-latest, test-ubuntu-20-04, test-macos, lint, performance]
+    needs: [test-ubuntu-latest, test-macos, lint, performance]
     runs-on: ubuntu-latest
     if: always() # 即使其他任务失败，也运行此任务
 
@@ -260,10 +228,6 @@ jobs:
                 <td class="status \${TEST_UBUNTU_LATEST_STATUS_CLASS}">\${TEST_UBUNTU_LATEST_STATUS}</td>
               </tr>
               <tr>
-                <td>Ubuntu 20.04 Tests</td>
-                <td class="status \${TEST_UBUNTU_2004_STATUS_CLASS}">\${TEST_UBUNTU_2004_STATUS}</td>
-              </tr>
-              <tr>
                 <td>macOS Tests</td>
                 <td class="status \${TEST_MACOS_STATUS_CLASS}">\${TEST_MACOS_STATUS}</td>
               </tr>
@@ -289,8 +253,6 @@ jobs:
           # 替换状态占位符（在实际场景中，你需要从job outputs获取这些信息）
           sed -i 's/\${TEST_UBUNTU_LATEST_STATUS}/Success/g' reports/test_report.html
           sed -i 's/\${TEST_UBUNTU_LATEST_STATUS_CLASS}/success/g' reports/test_report.html
-          sed -i 's/\${TEST_UBUNTU_2004_STATUS}/Success/g' reports/test_report.html
-          sed -i 's/\${TEST_UBUNTU_2004_STATUS_CLASS}/success/g' reports/test_report.html
           sed -i 's/\${TEST_MACOS_STATUS}/Success/g' reports/test_report.html
           sed -i 's/\${TEST_MACOS_STATUS_CLASS}/success/g' reports/test_report.html
           sed -i 's/\${LINT_STATUS}/Success/g' reports/test_report.html
