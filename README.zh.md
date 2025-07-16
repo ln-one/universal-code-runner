@@ -1,6 +1,6 @@
 # 通用代码运行器（Universal Code Runner）
 
-[![Test Suite](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![English README](https://img.shields.io/badge/English-README-blue.svg)](./README.md)
+[![CI 状态](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![English README](https://img.shields.io/badge/English-README-blue.svg)](./README.md)
 
 **`Universal Code Runner` 是一个智能、零配置的命令行工具，支持 10+ 种主流编程语言的编译与运行，追求极致的速度与优雅体验。**
 
