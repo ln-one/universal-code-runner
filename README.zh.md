@@ -1,6 +1,6 @@
 # 通用代码运行器（Universal Code Runner）
 
-[![Test Suite](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![English README](https://img.shields.io/badge/English-README-blue.svg)](./README.md)
+[![CI 状态](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![English README](https://img.shields.io/badge/English-README-blue.svg)](./README.md)
 
 **`Universal Code Runner` 是一个智能、零配置的命令行工具，支持 10+ 种主流编程语言的编译与运行，追求极致的速度与优雅体验。**
 
@@ -100,6 +100,28 @@ ucode --memory 100 my_program.c
 ```bash
 ucode --sandbox my_program.py
 ```
+
+## ⚙️ 配置文件支持
+
+Universal Code Runner 支持用户配置文件实现默认参数设置。
+
+- 支持的文件位置（按优先级依次查找）：
+  1. `./ucode.conf`（项目根目录）
+  2. `~/.ucoderc`（用户家目录）
+- 格式：shell 变量赋值，例如：
+  ```sh
+  # ~/.ucoderc 或 ./ucode.conf
+  RUNNER_TIMEOUT=10
+  RUNNER_MEMORY_LIMIT=256
+  RUNNER_LANGUAGE="zh"
+  RUNNER_DISABLE_CACHE=false
+  RUNNER_SANDBOX=true
+  RUNNER_VERBOSE=true
+  ```
+- **优先级**：命令行参数 > 配置文件 > 脚本默认值
+- 在 `ucode` 参数解析前自动加载。
+
+这样可以实现项目级或用户级的默认设置，也为后续扩展（如插件配置、自定义语言选项）打下基础。
 
 ---
 

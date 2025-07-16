@@ -1,7 +1,7 @@
 
 # Universal Code Runner
 
-[![Test Suite](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![中文文档](https://img.shields.io/badge/%E4%B8%AD%E6%96%87%E6%A1%A3-blue.svg)](./README.zh.md)
+[![CI Status](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/ln-one/universal-code-runner/actions/workflows/ci.yml)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![中文文档](https://img.shields.io/badge/%E4%B8%AD%E6%96%87%E6%A1%A3-blue.svg)](./README.zh.md)
 
 **`Universal Code Runner` is a smart, zero-configuration command-line tool for compiling and running code in over 10 different languages, designed for speed and elegance.**
 
@@ -120,6 +120,28 @@ ucode --memory 100 my_program.c
 # Run in a restricted sandbox environment
 ucode --sandbox my_program.py
 ```
+
+## ⚙️ Configuration File Support
+
+Universal Code Runner supports user configuration files for default settings.
+
+- Supported locations (checked in order):
+  1. `./ucode.conf` (project root)
+  2. `~/.ucoderc` (user home)
+- Format: simple shell variable assignments, e.g.:
+  ```sh
+  # ~/.ucoderc or ./ucode.conf
+  RUNNER_TIMEOUT=10
+  RUNNER_MEMORY_LIMIT=256
+  RUNNER_LANGUAGE="zh"
+  RUNNER_DISABLE_CACHE=false
+  RUNNER_SANDBOX=true
+  RUNNER_VERBOSE=true
+  ```
+- **Priority:** command-line arguments > config file > script defaults
+- Loaded automatically before argument parsing in `ucode`.
+
+This enables project-wide or user-wide default settings and paves the way for future extensibility (e.g., plugin config, custom language options).
 
 ---
 
