@@ -33,6 +33,18 @@ LANG_CONFIG=(
 )
 
 # ==============================================================================
+# JVM Language Configuration
+# ==============================================================================
+
+# JVM language specific configuration
+typeset -gA JVM_CONFIG
+JVM_CONFIG=(
+  # Format: lang "runner:output_ext:cache_pattern:class_pattern"
+  java "java:class:*.class:*.class"
+  # Future: kotlin, scala, etc. can be added here
+)
+
+# ==============================================================================
 # Configuration Helper Functions
 # ==============================================================================
 
@@ -66,4 +78,70 @@ parse_lang_config() {
   config_parts=("${(@s/:/)config_string}")
   
   echo "${config_parts[1]}" "${config_parts[2]}" "${config_parts[3]}" "${config_parts[4]}" "${config_parts[5]}"
+}
+
+# ==============================================================================
+# JVM Language Helper Functions
+# ==============================================================================
+
+# Check if a language is JVM-based
+is_jvm_language() {
+  local ext="$1"
+  [[ -n "${JVM_CONFIG[$ext]}" ]]
+}
+
+# Get JVM configuration for a language
+get_jvm_config() {
+  local ext="$1"
+  echo "${JVM_CONFIG[$ext]}"
+}
+
+# Parse JVM configuration string
+# Usage: parse_jvm_config <config_string>
+# Returns: runner output_ext cache_pattern class_pattern (space-separated)
+parse_jvm_config() {
+  local config_string="$1"
+  local -a config_parts
+  config_parts=("${(@s/:/)config_string}")
+  
+  echo "${config_parts[1]}" "${config_parts[2]}" "${config_parts[3]}" "${config_parts[4]}"
+}
+
+# Get JVM runner for a language
+get_jvm_runner() {
+  local ext="$1"
+  local jvm_config="${JVM_CONFIG[$ext]}"
+  if [[ -n "$jvm_config" ]]; then
+    local -a parts
+    parts=("${(@s/:/)jvm_config}")
+    echo "${parts[1]}"
+  else
+    echo "java"  # Default fallback
+  fi
+}
+
+# Get JVM output extension for a language
+get_jvm_output_ext() {
+  local ext="$1"
+  local jvm_config="${JVM_CONFIG[$ext]}"
+  if [[ -n "$jvm_config" ]]; then
+    local -a parts
+    parts=("${(@s/:/)jvm_config}")
+    echo "${parts[2]}"
+  else
+    echo "class"  # Default fallback
+  fi
+}
+
+# Get JVM cache pattern for a language
+get_jvm_cache_pattern() {
+  local ext="$1"
+  local jvm_config="${JVM_CONFIG[$ext]}"
+  if [[ -n "$jvm_config" ]]; then
+    local -a parts
+    parts=("${(@s/:/)jvm_config}")
+    echo "${parts[3]}"
+  else
+    echo "*.class"  # Default fallback
+  fi
 }

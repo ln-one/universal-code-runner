@@ -84,13 +84,18 @@ OUT_NAME=$(basename "$SRC_FILENAME" ".$SRC_EXT")
 
 # --- JVM Compilation ---
 if [[ "$TYPE" == "compile_jvm" ]]; then
-    local jvm_runner="java" # Runner is hardcoded for JVM
+    local jvm_runner=$(get_jvm_runner "$SRC_EXT")
+    local cache_pattern=$(get_jvm_cache_pattern "$SRC_EXT")
     check_dependencies_new "$COMPILER" "$jvm_runner"
     check_dependencies_new "zip" "unzip"  
     
     # For JVM languages, we need to handle caching differently
     # since the output is a .class file, not a binary
     local src_dir=$(dirname "$SRC_FILE")
+    
+    # Copy source file to temp directory for compilation
+    cp "$SRC_FILE" "$TEMP_DIR/"
+    local temp_src_file="$TEMP_DIR/$(basename "$SRC_FILE")"
     
     # Check if we have a cached class file
     if [[ "$RUNNER_DISABLE_CACHE" != "true" ]]; then
@@ -105,19 +110,19 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
         if [[ -f "$cached_zip" ]]; then
             debug_log "found_cache" "${cached_zip}"
             
-            # Extract the cached class files directly to the source directory
-            debug_log "extracting_cache" "${src_dir}"
+            # Extract the cached class files directly to the temp directory
+            debug_log "extracting_cache" "${TEMP_DIR}"
             
-            unzip -q -o -j "$cached_zip" "*.class" -d "$src_dir"
+            unzip -q -o -j "$cached_zip" "$cache_pattern" -d "$TEMP_DIR"
             
             log_msg SUCCESS "using_cached_compilation"
             log_msg INFO "executing"
             
-            # For Java, the runner must be executed from the directory containing the class files
+            # For Java, the runner must be executed from the directory containing the class files (TEMP_DIR)
             if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
-                (cd "$src_dir" && execute_and_show_output timeout "--kill-after=2" "$RUNNER_TIMEOUT" "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}")
+                execute_and_show_output timeout "--kill-after=2" "$RUNNER_TIMEOUT" "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}"
             else
-                (cd "$src_dir" && execute_and_show_output "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}")
+                execute_and_show_output "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}"
             fi
             exit $?
         else
@@ -128,7 +133,7 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
     # No cache hit, need to compile
     log_msg INFO "compiling" "${C_CYAN}${SRC_FILENAME}${C_RESET}"
     start_spinner "${SRC_FILENAME}"
-    if compile_output=$("$COMPILER" "$SRC_FILE" 2>&1); then
+    if compile_output=$("$COMPILER" "$temp_src_file" 2>&1); then
         stop_spinner
         log_msg SUCCESS "compilation_successful"
         
@@ -140,17 +145,12 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
             local src_hash=$(get_source_hash "$SRC_FILE" "$COMPILER")
             local cached_zip="${cache_dir}/${src_hash}.zip"
             
-            # Check if there are any class files to cache
-            if ls "$src_dir"/*.class &>/dev/null; then
-                debug_log "found_files_to_cache" "${src_dir}"
+            # Check if there are any output files to cache (in temp directory)
+            if ls "$TEMP_DIR"/$cache_pattern &>/dev/null; then
+                debug_log "found_files_to_cache" "${TEMP_DIR}"
                 
-                local current_dir=$(pwd)
-                
-                cd "$src_dir" || exit 1
-                
-                zip -q "${cached_zip}" *.class
-                
-                cd "$current_dir" || exit 1
+                # We're already in TEMP_DIR, so just zip the class files
+                zip -q "${cached_zip}" $cache_pattern
                 
                 # Check if zip was created successfully
                 if [[ -f "${cached_zip}" ]]; then
@@ -166,11 +166,11 @@ if [[ "$TYPE" == "compile_jvm" ]]; then
         fi
         
         log_msg INFO "executing"
-        # For Java, the runner must be executed from the directory containing the class files.
+        # For Java, the runner must be executed from the directory containing the class files (TEMP_DIR).
         if [[ -n "$RUNNER_TIMEOUT" && "$RUNNER_TIMEOUT" -gt 0 ]]; then
-            (cd "$(dirname "$SRC_FILE")" && execute_and_show_output timeout "--kill-after=2" "$RUNNER_TIMEOUT" "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}")
+            execute_and_show_output timeout "--kill-after=2" "$RUNNER_TIMEOUT" "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}"
         else
-            (cd "$(dirname "$SRC_FILE")" && execute_and_show_output "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}")
+            execute_and_show_output "$jvm_runner" "$OUT_NAME" "${PROG_ARGS[@]}"
         fi
         exit $?
     else
