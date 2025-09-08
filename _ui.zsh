@@ -137,26 +137,15 @@ log_msg() {
     local msg_style=""
     local icon=""
 
-    # Select icon based on mode
-    if [[ "$RUNNER_ASCII_MODE" == "true" ]]; then
-        case "$type" in
-            STEP)    icon="==>"   ;;
-            INFO)    icon="->"    ;;
-            SUCCESS) icon="[+]"   ;;
-            WARN)    icon="[!]"   ;;
-            ERROR)   icon="[x]"   ;;
-            DEBUG)   icon="[d]"   ;;
-        esac
-    else
-        case "$type" in
-            STEP)    icon="🚀" ;;
-            INFO)    icon="ℹ️" ;;
-            SUCCESS) icon="✨" ;;
-            WARN)    icon="⚠️" ;;
-            ERROR)   icon="❌" ;;
-            DEBUG)   icon="🐞" ;;
-        esac
-    fi
+    # Select icon based on type (using clean text symbols)
+    case "$type" in
+        STEP)    icon="==>"   ;;
+        INFO)    icon="-->"   ;;
+        SUCCESS) icon="[✓]"   ;;
+        WARN)    icon="[!]"   ;;
+        ERROR)   icon="[✗]"   ;;
+        DEBUG)   icon="[D]"   ;;
+    esac
 
     case "$type" in
         STEP)

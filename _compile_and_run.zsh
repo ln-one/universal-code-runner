@@ -62,15 +62,15 @@ if [[ "$TYPE" == "direct" ]]; then
             log_msg ERROR "execution_timeout" "${C_YELLOW}${RUNNER_TIMEOUT}s${C_RESET}"
             local status_msg=$(get_msg "program_timed_out_full")
             echo -e "
-${C_BLUE}📊 ${C_RED}${status_msg}${C_RESET}"
+${C_BLUE}[STATUS] ${C_RED}${status_msg}${C_RESET}"
         elif [[ $exit_code -eq 0 ]]; then
             local status_msg=$(get_msg "program_completed_full")
             echo -e "
-${C_BLUE}📊 ${C_GREEN}${status_msg}${C_RESET}"
+${C_BLUE}[STATUS] ${C_GREEN}${status_msg}${C_RESET}"
         else
             local status_msg=$(get_msg "program_exited_with_code_full" "$exit_code")
             echo -e "
-${C_BLUE}📊 ${C_YELLOW}${status_msg}${C_RESET}"
+${C_BLUE}[STATUS] ${C_YELLOW}${status_msg}${C_RESET}"
         fi
     else
         # Normal execution without timeout

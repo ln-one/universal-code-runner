@@ -255,7 +255,7 @@ check_dependencies_new() {
 check_dependencies() {
   for dep in "$@"; do
     if ! command -v "$dep" &> /dev/null; then
-      echo -e "${C_RED}❌ Error: Dependency not found: ${C_CYAN}${dep}${C_RESET}"
+      echo -e "${C_RED}[✗] Error: Dependency not found: ${C_CYAN}${dep}${C_RESET}"
       echo -e "${C_YELLOW}Please install ${C_CYAN}${dep}${C_YELLOW} and try again.${C_RESET}"
       exit 1
     fi
@@ -357,13 +357,13 @@ execute_and_show_output() {
   echo -e "${C_MAGENTA}└────────────────────────────────────────────────────────────┘${C_RESET}"
   if [[ $exit_code -eq 0 ]]; then
     local status_msg=$(get_msg "program_completed_full")
-    echo -e "\n${C_BLUE}📊 ${C_GREEN}${status_msg}${C_RESET}"
+    echo -e "\n${C_BLUE}[STATUS] ${C_GREEN}${status_msg}${C_RESET}"
   elif [[ $exit_code -eq 124 || $exit_code -eq 137 ]]; then
     local status_msg=$(get_msg "program_timed_out_full")
-    echo -e "\n${C_BLUE}📊 ${C_RED}${status_msg}${C_RESET}"
+    echo -e "\n${C_BLUE}[STATUS] ${C_RED}${status_msg}${C_RESET}"
   else
     local status_msg=$(get_msg "program_exited_with_code_full" "$exit_code")
-    echo -e "\n${C_BLUE}📊 ${C_YELLOW}${status_msg}${C_RESET}"
+    echo -e "\n${C_BLUE}[STATUS] ${C_YELLOW}${status_msg}${C_RESET}"
   fi
   return $exit_code
 }

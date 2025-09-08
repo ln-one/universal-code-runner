@@ -10,7 +10,7 @@ function show_help_en() {
     for ext in ${(k)LANG_CONFIG}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
     cat <<-EOF
 
-${C_BOLD}🚀 Universal Code Runner - A smart compile-and-run utility.${C_RESET}
+${C_BOLD}Universal Code Runner - A smart compile-and-run utility.${C_RESET}
 
 This script automatically handles compiling and running code files,
 letting you focus on writing code instead of build commands.
@@ -48,7 +48,7 @@ function show_help_zh() {
     for ext in ${(k)LANG_CONFIG}; do supported_langs_str+="${C_CYAN}.${ext}${C_RESET} "; done
     cat <<-EOF
 
-${C_BOLD}🚀 Universal Code Runner - 智能的编译与运行工具.${C_RESET}
+${C_BOLD}Universal Code Runner - 智能的编译与运行工具.${C_RESET}
 
 本脚本可自动处理代码的编译和运行，
 让您专注于代码本身，而非繁琐的构建命令。
@@ -100,7 +100,7 @@ function show_help() {
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  🚀 Entry Point & Logic
+#  Entry Point & Logic
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 # --- Load config file if present ---
