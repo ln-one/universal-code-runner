@@ -319,7 +319,12 @@ if [[ "$SEARCH_MODE" == "true" ]]; then
   {
     while IFS= read -r file; do
       local mod_time
-      mod_time=$(stat -c %Y "$file" 2>/dev/null)
+      # Use appropriate stat command based on OS (macOS uses BSD stat, Linux uses GNU stat)
+      if [[ "$(uname)" == "Darwin" ]]; then
+        mod_time=$(stat -f %m "$file" 2>/dev/null)
+      else
+        mod_time=$(stat -c %Y "$file" 2>/dev/null)
+      fi
       if [[ -n "$mod_time" && "$mod_time" -gt "$latest_mod_time" ]]; then
         latest_mod_time=$mod_time
         latest_file=$file
